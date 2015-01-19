@@ -69,29 +69,35 @@ class Example(Frame):
                 outline="#000", fill="#fff")
 
     def paintPath(self):
+        if self.p_num == len(self.paths):
+            self.p_num = 0
+            self.createCanvas()
         r, c = self.r, self.c
         r_ = r/6
         c_ = c/6
         if self.p_num:
             for p in self.paths[self.p_num-1]:
                 self.canvas.create_oval(1+r*p[0]+r_, 501-c*p[1]-c_, 1+r*p[0]+r-r_, 501-c*p[1]-c+c_,
-                    fill="#505")
+                    fill="#a0a")
         for p in self.paths[self.p_num]:
             self.canvas.create_oval(1+r*p[0]+r_, 501-c*p[1]-c_, 1+r*p[0]+r-r_, 501-c*p[1]-c+c_,
-                fill="#f0f")
+                fill="#ff0")
         self.p_num += 1
 
 def main():
-
-    dim, start, goal, obstacles = nav.get_input()
+    
+    mode, dim, start, goal, obstacles = nav.get_input()
 
     valid_points = nav.get_valid_points(dim, obstacles)
 
+    #print nav.succ((0,0), valid_points)
+
     paths = AStar.a_star(lambda p:nav.succ(p, valid_points),
-                            lambda p:nav.heur(p, goal),
-                            lambda p,q:nav.heur(p,q),
-                            start,
-                            lambda p:p==goal)
+                         lambda p:nav.heur(p, goal),
+                         lambda p,q:nav.heur(p,q),
+                         start,
+                         lambda p:p==goal,
+                         mode)
 
     root = Tk()
     root.geometry("640x600+200+100")
