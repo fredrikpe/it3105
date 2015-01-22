@@ -5,7 +5,7 @@ from ttk import Frame, Button, Label, Style
 import sys
 
 import AStar
-import Navigation as nav
+import VC
 
 class Example(Frame):
 
@@ -82,21 +82,19 @@ class Example(Frame):
             self.canvas.create_oval(1+r*p[0]+r_, 501-c*p[1]-c_, 1+r*p[0]+r-r_, 501-c*p[1]-c+c_,
                 fill="#ff0")
         self.p_num += 1
-import itertools as it
-def main():
-    a, b = (1,  2)
-    print a
-    return
-    NP = nav.NavProblem()
 
-    AS = AStar.AStar(NP)
+def main():
+
+    NP = VC.VCProblem()
+
+    AS = AStar.AStar(VC)
 
     paths = AS.solve()
 
-    root = Tk()
-    root.geometry("640x600+200+100")
-    app = Example(root, NP.dim, NP.start, NP.goal, NP.valid_points, paths)
-    root.mainloop()
+    #root = Tk()
+    #root.geometry("640x600+200+100")
+    #app = Example(root, NP.dim, NP.start, NP.goal, NP.valid_points, paths)
+    #root.mainloop()
 
 
 if __name__ == '__main__':

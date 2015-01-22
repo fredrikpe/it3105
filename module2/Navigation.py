@@ -6,7 +6,7 @@ class NavProblem:
 
     def __init__(self):
 
-        self.mode, self.dim, self.start, self.goal, self.obstacles = self.get_input()
+        self.get_input()
 
         self.valid_points = self.get_valid_points(self.dim, self.obstacles)
 
@@ -60,4 +60,8 @@ class NavProblem:
             while obs != "":
                 obstacles.append(map(int, obs.split(',')))
                 obs = raw_input("Obstacle: ")
-        return sys.argv[2], dim, start, goal, obstacles
+        self.mode = sys.argv[2]
+        self.dim = dim
+        self.start = start
+        self.goal = goal
+        self.obstacles = obstacles
