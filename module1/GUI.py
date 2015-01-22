@@ -58,7 +58,6 @@ class Example(Frame):
             padx=5, sticky=E+W+S+N)
         self.r = 500.0 / self.dim[0]
         self.c = 500.0 / self.dim[1]
-        #print self.r, self.c
         for x in range(1,self.dim[0]):
             self.canvas.create_line(1+self.r*x, 1, 1+self.r*x, 500)
         for x in range(1,self.dim[1]):
@@ -85,7 +84,7 @@ class Example(Frame):
         self.p_num += 1
 
 def main():
-    
+
     mode, dim, start, goal, obstacles = nav.get_input()
 
     valid_points = nav.get_valid_points(dim, obstacles)
