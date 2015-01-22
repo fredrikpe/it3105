@@ -82,25 +82,20 @@ class Example(Frame):
             self.canvas.create_oval(1+r*p[0]+r_, 501-c*p[1]-c_, 1+r*p[0]+r-r_, 501-c*p[1]-c+c_,
                 fill="#ff0")
         self.p_num += 1
-
+import itertools as it
 def main():
 
-    mode, dim, start, goal, obstacles = nav.get_input()
+    print [1]+[2]+[3]
+    return
+    NP = nav.NavProblem()
 
-    valid_points = nav.get_valid_points(dim, obstacles)
+    AS = AStar.AStar(NP)
 
-    #print nav.succ((0,0), valid_points)
-
-    paths = AStar.a_star(lambda p:nav.succ(p, valid_points),
-                         lambda p:nav.heur(p, goal),
-                         lambda p,q:nav.heur(p,q),
-                         start,
-                         lambda p:p==goal,
-                         mode)
+    paths = AS.solve()
 
     root = Tk()
     root.geometry("640x600+200+100")
-    app = Example(root, dim, start, goal, valid_points, paths)
+    app = Example(root, NP.dim, NP.start, NP.goal, NP.valid_points, paths)
     root.mainloop()
 
 

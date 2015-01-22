@@ -1,79 +1,70 @@
 
 import heapq as hq
 
-def a_star(succ, heur, arc_cost, start, is_goal, mode="astar"):
-    """ A general A* algorithm
+class AStar:
+    
+    def __init__(self, problem_instance):
+        self.P = problem_instance
+        self.agenda, self.closed, self.paths = [], [], []
+        self.add((self.P.heur(self.P.start), self.P.start))
+        self.g = {self.P.start:0}
+        self.came_from = {}
 
-    arguments:
-    the graph, given by its successor function,  node -> [node]
-    heuristic function,                          node -> num,
-    distance cost funtion,                       node, node -> num,
-    starting node,                               node
-    is_goal function.                            node -> bool
+    def solve(self):
+        " A general algorithm for A*, dfs and bfs search. "
+        P, g, = self.P, self.g
+        while self.agenda:
 
-    """
-    if mode == "astar": i = 0
-    elif mode == "dfs": i = 1
-    elif mode == "bfs": i = 2
-    else: print "Error: Unknown mode\n(Modes: astar, dfs, bfs)"; return
-    agendaQ = []
-    add(agendaQ, (heur(start), start), i)
-    agenda = [start]
-    closed = []
-    g = {start:0}
-    came_from = {}
-    paths = []
+            parent, self.agenda = self.pop()
+            self.closed.append(parent)
+            self.paths.append(self.reconstruct_path([parent]))
 
-    while agenda:
+            if P.is_goal(parent):
+                return self.paths
 
-        parent, agendaQ = pop(agendaQ, i)
-        agenda.remove(parent)
-        closed.append(parent)
-        paths.append(reconstruct_path(came_from, parent, start))
+            for child in P.succ(parent):
+                new_g = g[parent] + P.arc_cost(parent, child)
+                if child in self.closed:
+                    continue
 
-        if is_goal(parent):
-            return paths
+                c_in_a = self.contains(child)
+                if not c_in_a or (child in g and new_g < g[child]):
+                    g[child] = new_g
+                    f = new_g + P.heur(child)
+                    self.came_from[child] = parent
+                    if not c_in_a:
+                        self.add((f, child))
 
-        for child in succ(parent):
-
-            new_g = g[parent] + arc_cost(parent, child)
-            if child in closed:
-                continue
-
-            if child not in agenda or (child in g and new_g < g[child]):
-                g[child] = new_g
-                f = new_g + heur(child)
-                came_from[child] = parent
-
-                if child not in agenda:
-                    add(agendaQ, (f, child), i)
-                    agenda.append(child)
-
-                #if child in g and new_g < g[child]:
-                #    came_from[child] = parent
-                #    g[child] = new_g
+                    #if child in g and new_g < g[child]:
+                    #    came_from[child] = parent
+                    #    g[child] = new_g
                     #f_child = new_g + heur(child)
-                #continue
-    print "Failure"
-    return "Failure"
+                    #continue
+        print "Failure"
+        return "Failure"
 
-def reconstruct_path(came_from, cur, start):
-    total_path = [cur]
-    while cur != start:
-        cur = came_from[cur]
-        total_path.append(cur)
-    return total_path[::-1]
+    def reconstruct_path(self, path):
+        " Reconstructs path from goal to start node. "
+        while path[-1] != self.P.start:
+            path.append(came_from[path[-1]])
+        return path[::-1]
 
-def add(agenda, n, i):
-    if i == 0:
-        hq.heappush(agenda, n)
-    elif i == 1:
-        agenda.insert(0,n)
-    else:
-        agenda.append(n)
+    def add(self, elem):
+        " Adds element to the agenda (based on search-mode). "
+        if self.P.i == 0:
+            hq.heappush(self.agenda, elem)
+        elif self.P.i == 1:
+            self.agenda.insert(0, elem)
+        else:
+            self.agenda.append(elem)
 
-def pop(agenda, i):
-    if i == 0:
-        return hq.heappop(agenda)[1], agenda
-    else:
-        return agenda[0][1], agenda[1:]
+    def pop(self):
+        " Pops from agenda (based on search-mode). "
+        if self.P.i == 0:
+            return hq.heappop(self.agenda)[1], self.agenda
+        else:
+            return self.agenda[0][1], self.agenda[1:]
+
+    def contains(self, elem):
+        " Does the agenda contain element? "
+        return any(map(lambda e:elem == e[1], self.agenda))
