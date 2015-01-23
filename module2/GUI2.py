@@ -9,25 +9,37 @@ import VC
 
 class Example(Frame):
 
-    def __init__(self, parent, start, paths):
+    def __init__(self, parent, problem, paths):
         Frame.__init__(self, parent)
         self.paths = paths
-        self.start = start
+        self.P = problem
         self.parent = parent
         self.p_num = 0
 
-        self.color_list = ["blue", "green", "red", "yellow",
+        self.color_list = ["blue", "yellow", "red", "green",
             "orange", "purple", "pink", "brown", "magenta", "black"]
 
-        self.x_max = max(n.p[0] for n in start.nodes)
-        self.y_max = max(n.p[1] for n in start.nodes)
-
-        self.dim = 500.0
-
-        self.xs = self.dim/(self.x_max + 1)
-        self.ys = self.dim/(self.y_max + 1)
-
+        self.dim = 600.0
+        self.findEq()
         self.initUI()
+
+    def findEq(self):
+        xs, ys = zip(*self.P.points.itervalues())
+        self.x_x2 = max(xs)
+        self.y_x2 = max(ys)
+        self.x_x1 = min(xs)
+        self.y_x1 = min(ys)
+
+        self.x_y1 = self.y_y1 = 10.0
+        self.x_y2 = self.y_y2 = self.dim - 20.0
+        self.mx = (self.x_y2 - self.x_y1) / (self.x_x2 - self.x_x1)
+        self.my = (self.y_y2 - self.y_y1) / (self.y_x2 - self.y_x1)
+
+    def x_eq(self, x):
+        return self.mx*(x-self.x_x1) + self.x_y1
+
+    def y_eq(self, y):
+        return self.my*(y-self.y_x1) + self.y_y1
 
     def initUI(self):
 
@@ -59,46 +71,57 @@ class Example(Frame):
         obtn.grid(row=5, column=3)
 
     def createCanvas(self):
-        xs, ys = self.xs, self.ys
+        x_eq, y_eq = self.x_eq, self.y_eq
+        points = self.P.points
         self.canvas = Canvas(self)
         self.canvas.create_rectangle(1, 1, self.dim, self.dim,
             outline="#fff", fill="#fff")
         self.canvas.grid(row=1, column=0, columnspan=2, rowspan=4,
             padx=5, sticky=E+W+S+N)
 
-        print (self.x_max, self.y_max)
-        for n in self.start.nodes:
-            self.canvas.create_oval(4+n.p[0]*xs, 4+n.p[1]*ys,  n.p[0]*xs+16, n.p[1]*ys+16,
-                fill="#000")
-        for c in self.start.constraints:
-            self.canvas.create_line(10+c.vars[0].p[0]*xs, 10+c.vars[0].p[1]*ys,
-                10+c.vars[1].p[0]*xs, 10+c.vars[1].p[1]*ys)
+        for p in points.itervalues():
+            self.createOval(p)
+        for c in self.P.constraints:
+            self.canvas.create_line(5+x_eq(points[c.vars[0]][0]), 5+y_eq(points[c.vars[0]][1]),
+                5+x_eq(points[c.vars[1]][0]), 5+y_eq(points[c.vars[1]][1]))
 
     def paintState(self):
-        xs, ys = self.xs, self.ys
+        x_eq, y_eq = self.x_eq, self.y_eq
         if self.p_num == len(self.paths):
             self.p_num = 0
-        for n in self.paths[self.p_num][-1].nodes:
-            if len(n.domain) == 1:
-                c = n.domain[0]
+        for i, d in self.paths[self.p_num][-1].nodes.iteritems():
+            if len(d) == 1:
+                c = d[0]
             else: c = -1
-            self.canvas.create_oval(4+n.p[0]*xs, 4+n.p[1]*ys,  n.p[0]*xs+16, n.p[1]*ys+16,
-                fill=self.color_list[c])
+            self.createOval(self.P.points[i], color=self.color_list[c])
         self.p_num += 1
 
+    def createOval(self, p, color="black"):
+        self.canvas.create_oval(self.x_eq(p[0]), self.y_eq(p[1]),
+            self.x_eq(p[0])+10, self.y_eq(p[1])+10,
+            fill=color)
 
+class C:
+    def __init__(self): self.x=0
+
+
+import time
 def main():
-    #print all(map(lambda v:v==1, [1, 1, 1]));return
+
+    #print dict(['a', 'b']); return
+    s = time.time()
     NP = VC.VCProblem()
-
+    s2 = time.time()
     AS = AStar.AStar(NP)
-
+    s3 = time.time()
     paths = AS.solve()
-    #print paths[-1][-1]
-
+    s4 = time.time()
+    print s2-s
+    print s3-s2
+    print s4-s3
     root = Tk()
-    root.geometry("640x600+200+100")
-    app = Example(root, NP.start, paths)
+    root.geometry("730x700+50+50")
+    app = Example(root, NP, paths)
     root.mainloop()
 
 

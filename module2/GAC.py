@@ -1,45 +1,44 @@
 
 class GACState:
 
-    def __init__(self, constraints, nodes):
-        self.constraints = constraints
+    def __init__(self, nodes):
+
         self.nodes = nodes
         self.queue = []
         self.contra = False
 
+        assert(self.constraints is not None)
+
     def initialize(self):
-        self.queue = [[c, var] for c in self.constraints for var in c.vars]
+        self.queue = [[c, i] for c in self.constraints for i in c.vars]
 
     def domain_filtering(self):
-        while self.queue:
-            C, x = self.queue.pop()
-            old = len(x.domain)
-            self.revise(C, x)
-            new = len(x.domain)
+        while self.queue and not self.contra:
+            C, i = self.queue.pop()
+            old = len(self.nodes[i])
+            self.revise(C, i)
+            new = len(self.nodes[i])
             if old > new:
-                self.push_pairs(x, C)
+                self.push_pairs(i, C)
 
-    def revise(self, C, x):
-        i = x.index
-        var_combs = map(list,zip(*[var.domain for var in C.vars if var != x]))
-        pred = lambda x: any(map(lambda vs: C.f(vs[:i]+[x]+vs[i:]), var_combs))
-        x.domain = filter(pred, x.domain)
-        if x.domain == []:
+    def revise(self, C, i):
+        var_combs = map(list,zip(*[self.nodes[j] for j in C.vars if j != i]))
+        def predicate(x):
+            return any(map(lambda vs: C.f(vs+[x]), var_combs))
+        self.nodes[i] = filter(predicate, self.nodes[i])
+        if self.nodes[i] == []:
             self.contra = True
 
-    def rerun(self, x):
-        self.push_pairs(x)
+    def rerun(self, i):
+        self.push_pairs(i)
         self.domain_filtering()
 
-    def push_pairs(self, x, C=None):
+    def push_pairs(self, i, C=None):
+        """ Finds (constraint, variable) pair affected by assumption
+        and pushes pair to queue.
+        """
         for c in self.constraints:
-            if x in c.vars and (C is None or c != C):
-                for var in c.vars:
-                    if var != x:
-                        self.queue.append([c, var])
-
-    def __repr__(self):
-        s = ""
-        for n in self.nodes:
-            s += str(n.domain) + ", "
-        return s
+            if i in c.vars and (C is None or c != C):
+                for j in c.vars:
+                    if j != i:
+                        self.queue.append([c, j])

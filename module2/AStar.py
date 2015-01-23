@@ -20,7 +20,6 @@ class AStar:
             self.paths.append(self.reconstruct_path([parent]))
 
             if P.is_goal(parent):
-                print "GOOOOAL!"
                 return self.paths
 
             for child in P.succ(parent):
@@ -36,8 +35,8 @@ class AStar:
                     if not c_in_a:
                         self.add((f, child))
 
-                    if child in g and new_g < g[child]:
-                        print 2
+#                    if child in g and new_g < g[child]:
+#                        print 2
                     #    came_from[child] = parent
                     #    g[child] = new_g
                     #f_child = new_g + heur(child)
