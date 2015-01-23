@@ -1,27 +1,32 @@
 # -*- coding: utf-8 -*- #
 
 import sys
-
+import copy
 import GAC
 
-K = 4
 
 class VCProblem:
 
     def __init__(self):
         self.get_input()
 
-        
         root = GAC.GACState(self.constraints, self.nodes)
         root.initialize()
         root.domain_filtering()
+        self.start = root
+        self.i = 0
 
     def succ(self, state):
+        children = []
         for v in state.nodes:
             if len(v.domain) > 1:
                 children = [copy.deepcopy(state) for i in range(len(v.domain))]
-                for c in v.domain:
-                    children[c].nodes[v.index].domain = [c]
+                for i in range(len(v.domain)):
+                    children[i].nodes[v.index].domain = [v.domain[i]]
+                    children[i].rerun(children[i].nodes[v.index])
+                children =  filter(lambda c:not c.contra,children)
+                assert(children != []) #No solution or bug
+                return children
 
     def heur(self, state):
         return sum(len(v.domain)-1 for v in state.nodes)
@@ -37,7 +42,7 @@ class VCProblem:
             self.vars = vs
             self.f = f
     class Var:
-        def __init__(self, index, x, y):
+        def __init__(self, index, x, y, K):
             self.p = (x, y)
             self.index = index
             self.domain = range(K)
@@ -56,7 +61,7 @@ class VCProblem:
         return eval("(lambda " + args[1:] + ": " + expression + ")")
 
     def make_var(self, l, s):
-        var = self.Var(*map(int, s.split()))
+        var = self.Var(*(map(eval, s.split()) + [self.K]))
         l.append(var)
         return l
 
@@ -70,6 +75,8 @@ class VCProblem:
         f = open(sys.argv[1], "r")
         ls = f.read().splitlines()
         nv, ne = map(int,ls[0].split())
+
+        self.K = int(raw_input("K = "))
 
         self.nodes = reduce(self.make_var, ls[1:nv+1], [])
         self.constraints = reduce(self.make_con, ls[nv+1:], [])

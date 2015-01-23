@@ -9,15 +9,23 @@ import VC
 
 class Example(Frame):
 
-    def __init__(self, parent, dim, start, goal, valid_points, paths):
+    def __init__(self, parent, start, paths):
         Frame.__init__(self, parent)
-        self.dim = dim
-        self.start = start
-        self.goal = goal
-        self.valid_points = valid_points
         self.paths = paths
+        self.start = start
         self.parent = parent
         self.p_num = 0
+
+        self.color_list = ["blue", "green", "red", "yellow",
+            "orange", "purple", "pink", "brown", "magenta", "black"]
+
+        self.x_max = max(n.p[0] for n in start.nodes)
+        self.y_max = max(n.p[1] for n in start.nodes)
+
+        self.dim = 500.0
+
+        self.xs = self.dim/(self.x_max + 1)
+        self.ys = self.dim/(self.y_max + 1)
 
         self.initUI()
 
@@ -38,7 +46,7 @@ class Example(Frame):
 
         self.createCanvas()
 
-        abtn = Button(self, text="Next path", command=self.paintPath)
+        abtn = Button(self, text="Next path", command=self.paintState)
         abtn.grid(row=1, column=3)
 
         cbtn = Button(self, text="Close")
@@ -51,50 +59,47 @@ class Example(Frame):
         obtn.grid(row=5, column=3)
 
     def createCanvas(self):
+        xs, ys = self.xs, self.ys
         self.canvas = Canvas(self)
-        self.canvas.create_rectangle(1, 1, 500, 500,
-            outline="#000", fill="#000")
+        self.canvas.create_rectangle(1, 1, self.dim, self.dim,
+            outline="#fff", fill="#fff")
         self.canvas.grid(row=1, column=0, columnspan=2, rowspan=4,
             padx=5, sticky=E+W+S+N)
-        self.r = 500.0 / self.dim[0]
-        self.c = 500.0 / self.dim[1]
-        for x in range(1,self.dim[0]):
-            self.canvas.create_line(1+self.r*x, 1, 1+self.r*x, 500)
-        for x in range(1,self.dim[1]):
-            self.canvas.create_line(1, 1+self.c*x, 500, 1+self.c*x)
-        for p in self.valid_points:
-            #print p
-            self.canvas.create_rectangle(1+self.r*p[0], 501-self.c*p[1], 1+self.r*p[0]+self.r, 501-self.c*p[1]-self.c,
-                outline="#000", fill="#fff")
 
-    def paintPath(self):
+        print (self.x_max, self.y_max)
+        for n in self.start.nodes:
+            self.canvas.create_oval(4+n.p[0]*xs, 4+n.p[1]*ys,  n.p[0]*xs+16, n.p[1]*ys+16,
+                fill="#000")
+        for c in self.start.constraints:
+            self.canvas.create_line(10+c.vars[0].p[0]*xs, 10+c.vars[0].p[1]*ys,
+                10+c.vars[1].p[0]*xs, 10+c.vars[1].p[1]*ys)
+
+    def paintState(self):
+        xs, ys = self.xs, self.ys
         if self.p_num == len(self.paths):
             self.p_num = 0
-            self.createCanvas()
-        r, c = self.r, self.c
-        r_ = r/6
-        c_ = c/6
-        if self.p_num:
-            for p in self.paths[self.p_num-1]:
-                self.canvas.create_oval(1+r*p[0]+r_, 501-c*p[1]-c_, 1+r*p[0]+r-r_, 501-c*p[1]-c+c_,
-                    fill="#a0a")
-        for p in self.paths[self.p_num]:
-            self.canvas.create_oval(1+r*p[0]+r_, 501-c*p[1]-c_, 1+r*p[0]+r-r_, 501-c*p[1]-c+c_,
-                fill="#ff0")
+        for n in self.paths[self.p_num][-1].nodes:
+            if len(n.domain) == 1:
+                c = n.domain[0]
+            else: c = -1
+            self.canvas.create_oval(4+n.p[0]*xs, 4+n.p[1]*ys,  n.p[0]*xs+16, n.p[1]*ys+16,
+                fill=self.color_list[c])
         self.p_num += 1
 
-def main():
 
+def main():
+    #print all(map(lambda v:v==1, [1, 1, 1]));return
     NP = VC.VCProblem()
 
-    AS = AStar.AStar(VC)
+    AS = AStar.AStar(NP)
 
     paths = AS.solve()
+    #print paths[-1][-1]
 
-    #root = Tk()
-    #root.geometry("640x600+200+100")
-    #app = Example(root, NP.dim, NP.start, NP.goal, NP.valid_points, paths)
-    #root.mainloop()
+    root = Tk()
+    root.geometry("640x600+200+100")
+    app = Example(root, NP.start, paths)
+    root.mainloop()
 
 
 if __name__ == '__main__':
