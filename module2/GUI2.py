@@ -8,17 +8,15 @@ import AStar
 import VC
 
 class Example(Frame):
-
-    def __init__(self, parent, problem, paths):
+    def __init__(self, parent, problem, AS):
         Frame.__init__(self, parent)
-        self.paths = paths
+        self.AS = AS
+        self.paths = AS.paths
         self.P = problem
         self.parent = parent
         self.p_num = 0
-
         self.color_list = ["blue", "yellow", "red", "green",
-            "orange", "purple", "pink", "brown", "magenta", "black"]
-
+            "cyan", "magenta", "pink", "brown", "magenta", "black"]
         self.dim = 600.0
         self.findEq()
         self.initUI()
@@ -29,7 +27,6 @@ class Example(Frame):
         self.y_x2 = max(ys)
         self.x_x1 = min(xs)
         self.y_x1 = min(ys)
-
         self.x_y1 = self.y_y1 = 10.0
         self.x_y2 = self.y_y2 = self.dim - 20.0
         self.mx = (self.x_y2 - self.x_y1) / (self.x_x2 - self.x_x1)
@@ -42,7 +39,6 @@ class Example(Frame):
         return self.my*(y-self.y_x1) + self.y_y1
 
     def initUI(self):
-
         self.parent.title("Windows")
         self.style = Style()
         self.style.theme_use("default")
@@ -51,10 +47,19 @@ class Example(Frame):
         self.columnconfigure(1, weight=1)
         self.columnconfigure(3, pad=7)
         self.rowconfigure(3, weight=1)
-        self.rowconfigure(5, pad=7)
 
-        lbl = Label(self, text="Windows")
-        lbl.grid(sticky=W, pady=4, padx=5)
+        uc = self.paths[-1][-1].unsat_cs()
+        uv = self.paths[-1][-1].uncolor_vs()
+        ns = len(self.AS.closed)
+        pn = len(self.paths)
+        sl = len(self.paths[-1])
+        s = "Unsatisfied consts: " + str(uc)
+        s += ". Uncolored verts: " + str(uv)
+        s += ". Explored nodes: " + str(ns)
+        s += ". Popped nodes: " + str(pn)
+        s += ". Length of solution: " + str(sl)
+        lbl2 = Label(self, text=s)
+        lbl2.grid(sticky=W, pady=4, padx=5)
 
         self.createCanvas()
 
@@ -63,12 +68,6 @@ class Example(Frame):
 
         cbtn = Button(self, text="Close")
         cbtn.grid(row=2, column=3, pady=4)
-
-        hbtn = Button(self, text="Help")
-        hbtn.grid(row=5, column=0, padx=5)
-
-        obtn = Button(self, text="OK")
-        obtn.grid(row=5, column=3)
 
     def createCanvas(self):
         x_eq, y_eq = self.x_eq, self.y_eq
@@ -101,11 +100,8 @@ class Example(Frame):
             self.x_eq(p[0])+10, self.y_eq(p[1])+10,
             fill=color)
 
-class C:
-    def __init__(self): self.x=0
-
-
 import time
+
 def main():
 
     #print dict(['a', 'b']); return
@@ -114,16 +110,15 @@ def main():
     s2 = time.time()
     AS = AStar.AStar(NP)
     s3 = time.time()
-    paths = AS.solve()
+    AS.solve()
     s4 = time.time()
     print s2-s
     print s3-s2
     print s4-s3
     root = Tk()
-    root.geometry("730x700+50+50")
-    app = Example(root, NP, paths)
+    root.geometry("730x650+75+50")
+    app = Example(root, NP, AS)
     root.mainloop()
-
 
 if __name__ == '__main__':
     main()

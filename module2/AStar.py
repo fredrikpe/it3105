@@ -14,19 +14,15 @@ class AStar:
         " A general algorithm for A*, dfs and bfs search. "
         P, g, = self.P, self.g
         while self.agenda:
-
             parent, self.agenda = self.pop()
             self.closed.append(parent)
             self.paths.append(self.reconstruct_path([parent]))
-
             if P.is_goal(parent):
-                return self.paths
-
+                return
             for child in P.succ(parent):
                 new_g = g[parent] + P.arc_cost(parent, child)
                 if child in self.closed:
                     continue
-
                 c_in_a = self.contains(child)
                 if not c_in_a or (child in g and new_g < g[child]):
                     g[child] = new_g
@@ -34,9 +30,7 @@ class AStar:
                     self.came_from[child] = parent
                     if not c_in_a:
                         self.add((f, child))
-
-#                    if child in g and new_g < g[child]:
-#                        print 2
+                    #if child in g and new_g < g[child]:
                     #    came_from[child] = parent
                     #    g[child] = new_g
                     #f_child = new_g + heur(child)
