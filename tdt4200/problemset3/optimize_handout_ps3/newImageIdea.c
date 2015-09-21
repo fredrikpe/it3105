@@ -51,16 +51,16 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
       val += imageIn->data[ti+j];
     }
     for(int j=0  ; j<=r ; j++) {
-      val += scl[ri++] - fv       ;
-      tcl[ti++] = Math.round(val*iarr);
+      val += scl[ri++] ;//- fv       ;
+      tcl[ti++] = val;//Math.round(val*iarr);
     }
     for(int j=r+1; j<width-r; j++) {
       val += scl[ri++] - scl[li++];
-      tcl[ti++] = Math.round(val*iarr);
+      tcl[ti++] = val;//Math.round(val*iarr);
     }
     for(int j=width-r; j<width; j++) {
       val += lv        - scl[li++];
-      tcl[ti++] = Math.round(val*iarr);
+      tcl[ti++] = val;//Math.round(val*iarr);
     }
   }
 
