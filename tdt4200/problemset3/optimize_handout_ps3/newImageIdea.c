@@ -36,8 +36,33 @@ AccurateImage *convertImageToNewFormat(PPMImage *image) {
 
 void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, int colourType, int size) {
   int r = (size*2 + 1) / 2;
-  int numberOfValuesInEachRow = imageIn->x;
+  int width = imageIn->x;
   // Horizontal pass
+
+  function boxBlurH_4 (scl, tcl, w, h, r) {
+  var iarr = 1 / (r+r+1);
+  for( y_pos=0; y_pos<imageIn->y; y_pos++) {
+    int val = 0;
+    int ti = y_pos*width;
+    li = ti;
+    ri = ti+r;
+    int fv = scl[ti], lv = scl[ti+width-1], val = (r+1)*fv;
+    for(int j=0; j<r; j++) {
+      val += imageIn->data[ti+j];
+    }
+    for(int j=0  ; j<=r ; j++) {
+      val += scl[ri++] - fv       ;
+      tcl[ti++] = Math.round(val*iarr);
+    }
+    for(int j=r+1; j<width-r; j++) {
+      val += scl[ri++] - scl[li++];
+      tcl[ti++] = Math.round(val*iarr);
+    }
+    for(int j=width-r; j<width; j++) {
+      val += lv        - scl[li++];
+      tcl[ti++] = Math.round(val*iarr);
+    }
+  }
 
   for(int senterY = 0; senterY < imageIn->y; senterY++) {
     int cur = 0;
