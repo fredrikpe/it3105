@@ -3,7 +3,7 @@
 all: newImageIdea newImageIdeaReference
 
 newImageIdea: newImageIdea.c ppm.c
-	gcc -O2 --std=c99 -o $@ $^ -lm
+	gcc -g -O2 --std=c99 -o $@ $^ -lm
 
 
 newImageIdeaReference: newImageIdeaReference.c ppm.c
@@ -15,11 +15,15 @@ checker: checker.c ppm.c
 check: checker flower_tiny_correct.ppm flower_small_correct.ppm flower_medium_correct.ppm
 	./checker
 
-run_reference flower_tiny_correct.ppm flower_small_correct.ppm flower_medium_correct.ppm: newImageIdeaReference 
+run_reference flower_tiny_correct.ppm flower_small_correct.ppm flower_medium_correct.ppm: newImageIdeaReference
 	./newImageIdeaReference
 
 run: newImageIdea
 	./newImageIdea 1
+
+time: newImageIdea
+	time ./newImageIdea 1
+	perf stat ./newImageIdea 1
 
 clean:
 	rm -f newImageIdea newImageIdeaReference checker
