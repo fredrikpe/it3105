@@ -9,7 +9,7 @@
 // http://7-themes.com/6971875-funny-flowers-pictures.html
 
 typedef struct {
-     double red,green,blue;
+     float red,green,blue;
 } AccuratePixel;
 
 typedef struct {
@@ -24,9 +24,9 @@ AccurateImage *convertImageToNewFormat(PPMImage *image) {
 	imageAccurate = (AccurateImage *)malloc(sizeof(AccurateImage));
 	imageAccurate->data = (AccuratePixel*)malloc(image->x * image->y * sizeof(AccuratePixel));
 	for(int i = 0; i < image->x * image->y; i++) {
-		imageAccurate->data[i].red   = (double) image->data[i].red;
-		imageAccurate->data[i].green = (double) image->data[i].green;
-		imageAccurate->data[i].blue  = (double) image->data[i].blue;
+		imageAccurate->data[i].red   = (float) image->data[i].red;
+		imageAccurate->data[i].green = (float) image->data[i].green;
+		imageAccurate->data[i].blue  = (float) image->data[i].blue;
 	}
 	imageAccurate->x = image->x;
 	imageAccurate->y = image->y;
@@ -34,19 +34,19 @@ AccurateImage *convertImageToNewFormat(PPMImage *image) {
 	return imageAccurate;
 }
 
-void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageTmp, AccurateImage *imageIn, int size) {
+void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, int size) {
 
   int L = size + size + 1;
   int W = imageIn->x;
   int H = imageIn->y;
-  double rec = 1.0 / L;
+  float rec = 1.0 / L;
 
   // Horizontal
   for( int y_pos=0; y_pos<H; y_pos++)
   {
-    double red_val = 0.0;
-    double green_val = 0.0;
-    double blue_val = 0.0;
+    float red_val = 0.0;
+    float green_val = 0.0;
+    float blue_val = 0.0;
     int cur = y_pos*W;
     int prev = cur;
     int next = cur+size;
@@ -62,9 +62,9 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageTmp, A
       red_val += imageIn->data[next].red;
       green_val += imageIn->data[next].green;
       blue_val += imageIn->data[next].blue;
-      imageTmp->data[cur].red = red_val;
-      imageTmp->data[cur].green = green_val;
-      imageTmp->data[cur].blue = blue_val;
+      imageOut->data[cur].red = red_val;
+      imageOut->data[cur].green = green_val;
+      imageOut->data[cur].blue = blue_val;
       cur++; next++;
     }
     for(int j=size+1; j<W-size; j++) // middle part
@@ -72,9 +72,9 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageTmp, A
       red_val += imageIn->data[next].red - imageIn->data[prev].red;
       green_val += imageIn->data[next].green - imageIn->data[prev].green;
       blue_val += imageIn->data[next].blue - imageIn->data[prev].blue;
-      imageTmp->data[cur].red = red_val;
-      imageTmp->data[cur].green = green_val;
-      imageTmp->data[cur].blue = blue_val;
+      imageOut->data[cur].red = red_val;
+      imageOut->data[cur].green = green_val;
+      imageOut->data[cur].blue = blue_val;
       cur++; next++; prev++;
     }
     for(int j=1; j<=size; j++) // end edge
@@ -82,23 +82,23 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageTmp, A
       red_val -= imageIn->data[prev].red;
       green_val -= imageIn->data[prev].green;
       blue_val -= imageIn->data[prev].blue;
-      imageTmp->data[cur].red = red_val;
-      imageTmp->data[cur].green = green_val;
-      imageTmp->data[cur].blue = blue_val;
+      imageOut->data[cur].red = red_val;
+      imageOut->data[cur].green = green_val;
+      imageOut->data[cur].blue = blue_val;
       cur++; prev++;
     }
   }
   // Vertical
   for(int i=0; i<W; i++)
   {
-    double red_val = 0.0;
-    double green_val = 0.0;
-    double blue_val = 0.0;
+    float red_val = 0.0;
+    float green_val = 0.0;
+    float blue_val = 0.0;
     int cur = i;
     int prev = cur;
     int next = cur + size*W;
 
-    double x = 1.0 / L;
+    float x = 1.0 / L;
     if (i<size) {
       x = 1.0/ (size+1+i);
     } else if (i > (W-size-1)) {
@@ -107,42 +107,59 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageTmp, A
 
     for(int j=0; j<size; j++)
     {
-      red_val += imageTmp->data[cur+j*W].red;
-      green_val += imageTmp->data[cur+j*W].green;
-      blue_val += imageTmp->data[cur+j*W].blue;
+      red_val += imageOut->data[cur+j*W].red;
+      green_val += imageOut->data[cur+j*W].green;
+      blue_val += imageOut->data[cur+j*W].blue;
     }
     for(int j=0  ; j<=size ; j++) // Start edge
     {
-      double y = 1.0 / (size + 1 + j);
-      red_val += imageTmp->data[next].red;
-      green_val += imageTmp->data[next].green;
-      blue_val += imageTmp->data[next].blue;
-      imageOut->data[cur].red = red_val * y * x;
-      imageOut->data[cur].green = green_val * y * x;
-      imageOut->data[cur].blue = blue_val * y * x;
+      float y = 1.0 / (size + 1 + j);
+      red_val += imageOut->data[next].red;
+      green_val += imageOut->data[next].green;
+      blue_val += imageOut->data[next].blue;
+      imageIn->data[cur].red = red_val * y * x;
+      imageIn->data[cur].green = green_val * y * x;
+      imageIn->data[cur].blue = blue_val * y * x;
       next+=W; cur+=W;
     }
     for(int j=size+1; j<H-size; j++) // Middle part
     {
-      red_val += imageTmp->data[next].red - imageTmp->data[prev].red;
-      green_val += imageTmp->data[next].green - imageTmp->data[prev].green;
-      blue_val += imageTmp->data[next].blue - imageTmp->data[prev].blue;
-      imageOut->data[cur].red = red_val * rec * x;
-      imageOut->data[cur].green = green_val * rec * x;
-      imageOut->data[cur].blue = blue_val * rec * x;
+      red_val += imageOut->data[next].red - imageOut->data[prev].red;
+      green_val += imageOut->data[next].green - imageOut->data[prev].green;
+      blue_val += imageOut->data[next].blue - imageOut->data[prev].blue;
+      imageIn->data[cur].red = red_val * rec * x;
+      imageIn->data[cur].green = green_val * rec * x;
+      imageIn->data[cur].blue = blue_val * rec * x;
       prev+=W; next+=W; cur+=W;
     }
     for(int j=1; j<=size  ; j++) // End edge
     {
-      double y = 1.0 / (L - j);
-      red_val -= imageTmp->data[prev].red;
-      green_val -= imageTmp->data[prev].green;
-      blue_val -= imageTmp->data[prev].blue;
-      imageOut->data[cur].red = red_val * y * x;
-      imageOut->data[cur].green = green_val * y * x;
-      imageOut->data[cur].blue = blue_val * y * x;
+      float y = 1.0 / (L - j);
+      red_val -= imageOut->data[prev].red;
+      green_val -= imageOut->data[prev].green;
+      blue_val -= imageOut->data[prev].blue;
+      imageIn->data[cur].red = red_val * y * x;
+      imageIn->data[cur].green = green_val * y * x;
+      imageIn->data[cur].blue = blue_val * y * x;
       prev+=W; cur+=W;
     }
+  }
+}
+
+float getNewValue(float old_value) {
+  old_value = floor(old_value);
+  if(old_value > 255)
+    return 255;
+  else if (old_value < -1.0) {   //old_value > -1.0 &&
+    old_value = 257.0+old_value;
+    if(old_value > 255)
+      return 255;
+    else
+      return  old_value;
+  } else if (old_value == -1.0) {
+    return 0;
+  } else {
+    return old_value;
   }
 }
 
@@ -156,54 +173,16 @@ PPMImage * performNewIdeaFinalization(AccurateImage *imageInSmall, AccurateImage
   imageOut->y = imageInSmall->y;
 
   for(int i = 0; i < imageInSmall->x * imageInSmall->y; i++) {
-    double value = (imageInLarge->data[i].red - imageInSmall->data[i].red);
-    if(value > 255)
-      imageOut->data[i].red = 255;
-    else if (value < -1.0) {
-      value = 257.0+value;
-      if(value > 255)
-        imageOut->data[i].red = 255;
-      else
-        imageOut->data[i].red = floor(value);
-    } else if (value > -1.0 && value < 0.0) {
-      imageOut->data[i].red = 0;
-    } else {
-      imageOut->data[i].red = floor(value);
-    }
-
+    float value = (imageInLarge->data[i].red - imageInSmall->data[i].red);
+    imageOut->data[i].red = getNewValue(value);
     value = (imageInLarge->data[i].green - imageInSmall->data[i].green);
-    if(value > 255)
-      imageOut->data[i].green = 255;
-    else if (value < -1.0) {
-      value = 257.0+value;
-      if(value > 255)
-        imageOut->data[i].green = 255;
-      else
-        imageOut->data[i].green = floor(value);
-    } else if (value > -1.0 && value < 0.0) {
-      imageOut->data[i].green = 0;
-    } else {
-      imageOut->data[i].green = floor(value);
-    }
-
-
+    imageOut->data[i].green = getNewValue(value);
     value = (imageInLarge->data[i].blue - imageInSmall->data[i].blue);
-    if(value > 255)
-      imageOut->data[i].blue = 255;
-    else if (value < -1.0) {
-      value = 257.0+value;
-      if(value > 255)
-        imageOut->data[i].blue = 255;
-      else
-        imageOut->data[i].blue = floor(value);
-    } else if (value > -1.0 && value < 0.0) {
-      imageOut->data[i].blue = 0;
-    } else   {
-      imageOut->data[i].blue = floor(value);
-    }
+    imageOut->data[i].blue = getNewValue(value);
   }
   return imageOut;
 }
+
 
 
 int main(int argc, char** argv) {
@@ -217,50 +196,46 @@ int main(int argc, char** argv) {
 	}
 	AccurateImage *it1 = convertImageToNewFormat(image);
 	AccurateImage *it2 = convertImageToNewFormat(image);
-  AccurateImage *it3 = convertImageToNewFormat(image);
 	// Process the tiny case:
 	int size = 2;
-	performNewIdeaIteration(it2, it3, it1, size);
-	performNewIdeaIteration(it1, it3, it2, size);
-	performNewIdeaIteration(it2, it3, it1, size);
-	performNewIdeaIteration(it1, it3, it2, size);
-  performNewIdeaIteration(it2, it3, it1, size);
+	performNewIdeaIteration(it1, it2, size);
+	performNewIdeaIteration(it1, it2, size);
+	performNewIdeaIteration(it1, it2, size);
+	performNewIdeaIteration(it1, it2, size);
+  performNewIdeaIteration(it1, it2, size);
 
 
 
   AccurateImage *is1 = convertImageToNewFormat(image);
   AccurateImage *is2 = convertImageToNewFormat(image);
-  AccurateImage *is3 = convertImageToNewFormat(image);
   // Process the small case:
   size = 3;
-  performNewIdeaIteration(is2, is3, is1, size);
-  performNewIdeaIteration(is1, is3, is2, size);
-  performNewIdeaIteration(is2, is3, is1, size);
-  performNewIdeaIteration(is1, is3, is2, size);
-  performNewIdeaIteration(is2, is3, is1, size);
+  performNewIdeaIteration(is1, is2, size);
+  performNewIdeaIteration(is1, is2, size);
+  performNewIdeaIteration(is1, is2, size);
+  performNewIdeaIteration(is1, is2, size);
+  performNewIdeaIteration(is1, is2, size);
 
   AccurateImage *im1 = convertImageToNewFormat(image);
   AccurateImage *im2 = convertImageToNewFormat(image);
-  AccurateImage *im3 = convertImageToNewFormat(image);
   // Process the medium case:
   size = 5;
-  performNewIdeaIteration(im2, im3, im1, size);
-  performNewIdeaIteration(im1, im3, im2, size);
-  performNewIdeaIteration(im2, im3, im1, size);
-  performNewIdeaIteration(im1, im3, im2, size);
-  performNewIdeaIteration(im2, im3, im1, size);
+  performNewIdeaIteration(im1, im2, size);
+  performNewIdeaIteration(im1, im2, size);
+  performNewIdeaIteration(im1, im2, size);
+  performNewIdeaIteration(im1, im2, size);
+  performNewIdeaIteration(im1, im2, size);
 
 
   AccurateImage *il1 = convertImageToNewFormat(image);
   AccurateImage *il2 = convertImageToNewFormat(image);
-  AccurateImage *il3 = convertImageToNewFormat(image);
   // Process the large case:
   size = 8;
-  performNewIdeaIteration(il2, il3, il1, size);
-  performNewIdeaIteration(il1, il3, il2, size);
-  performNewIdeaIteration(il2, il3, il1, size);
-  performNewIdeaIteration(il1, il3, il2, size);
-  performNewIdeaIteration(il2, il3, il1, size);
+  performNewIdeaIteration(il1, il2, size);
+  performNewIdeaIteration(il1, il2, size);
+  performNewIdeaIteration(il1, il2, size);
+  performNewIdeaIteration(il1, il2, size);
+  performNewIdeaIteration(il1, il2, size);
 
 	// Save the images.
 	PPMImage *final_tiny = performNewIdeaFinalization(it2, is2);

@@ -22,7 +22,6 @@ run: newImageIdea
 	./newImageIdea 1
 
 time: newImageIdea
-	time ./newImageIdea 1
 	perf stat ./newImageIdea 1
 
 clean:
