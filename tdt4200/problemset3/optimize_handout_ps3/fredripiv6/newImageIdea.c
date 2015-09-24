@@ -104,8 +104,6 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
     int next = cur*H + size;
 
     float x = 1.0 / L;
-    //x = (i<size) ? 1.0/(size+1+i) : x;
-    //x = (i>(W-size-1)) ? 1.0/(size + (W - i)) : x;
     if (i<size) {
       x = 1.0/ (size+1+i);
     } else if (i > (W-size-1)) {
