@@ -25,7 +25,7 @@ AccurateImage *convertImageToNewFormat(PPMImage *image) {
 	// Make a copy
 	AccurateImage *imageAccurate;
 	imageAccurate = (AccurateImage *)malloc(sizeof(AccurateImage));
-	imageAccurate->data = (AccuratePixel*)malloc(image->x * image->x * sizeof(AccuratePixel));
+	imageAccurate->data = (AccuratePixel*)malloc(image->x * image->y * sizeof(AccuratePixel));
   W = image->x;
   H = image->y;
 	for(int i = 0; i < image->x * image->y; i++) {
@@ -68,7 +68,7 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
       imageOut->data[cur].red = red_val;
       imageOut->data[cur].green = green_val;
       imageOut->data[cur].blue = blue_val;
-      cur+=W; next++;
+      cur+=H; next++;
     }
     for(int j=size+1; j<W-size; j++) // middle part
     {
@@ -79,7 +79,7 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
       imageOut->data[cur].red = red_val;
       imageOut->data[cur].green = green_val;
       imageOut->data[cur].blue = blue_val;
-      cur+=W; next++; prev++;
+      cur+=H; next++; prev++;
     }
     for(int j=1; j<=size; j++) // end edge
     {
@@ -89,77 +89,19 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
       imageOut->data[cur].red = red_val;
       imageOut->data[cur].green = green_val;
       imageOut->data[cur].blue = blue_val;
-      cur+=W; prev++;
+      cur+=H; prev++;
     }
   }
-
-  // 2Horizontal
-  for( int y_pos=0; y_pos<W; y_pos++)
-  {
-    float red_val = 0.0;
-    float green_val = 0.0;
-    float blue_val = 0.0;
-    int cur = y_pos;
-    int prev = cur*W;
-    int next = cur*W+size;
-
-    float x = 1.0 / L;
-    if (y_pos<size) {
-      x = 1.0/ (size+1+y_pos);
-    } else if (y_pos > (W-size-1)) {
-      x = 1.0 / (size + (W - y_pos));
-    }
-
-    for(int j=0; j<size; j++) // initilize values
-    {
-      red_val += imageOut->data[cur*W+j].red;
-      green_val += imageOut->data[cur*W+j].green;
-      blue_val += imageOut->data[cur*W+j].blue;
-    }
-    for(int j=0  ; j<=size ; j++) // start edge
-    {
-      float y = 1.0 / (size + 1 + j);
-      red_val += imageOut->data[next].red;
-      green_val += imageOut->data[next].green;
-      blue_val += imageOut->data[next].blue;
-      imageIn->data[cur].red = red_val * y * x;
-      imageIn->data[cur].green = green_val * y * x;
-      imageIn->data[cur].blue = blue_val * y * x;
-      cur+=W; next++;
-    }
-    for(int j=size+1; j<H-size; j++) // middle part
-    {
-      red_val += imageOut->data[next].red - imageOut->data[prev].red;
-      green_val += imageOut->data[next].green - imageOut->data[prev].green;
-      blue_val += imageOut->data[next].blue - imageOut->data[prev].blue;
-      imageIn->data[cur].red = red_val * rec * x;
-      imageIn->data[cur].green = green_val * rec * x;
-      imageIn->data[cur].blue = blue_val * rec * x;
-      cur+=W; next++; prev++;
-    }
-    for(int j=1; j<=size; j++) // end edge
-    {
-      float y = 1.0 / (L - j);
-      red_val -= imageOut->data[prev].red;
-      green_val -= imageOut->data[prev].green;
-      blue_val -= imageOut->data[prev].blue;
-      imageIn->data[cur].red = red_val * y * x;
-      imageIn->data[cur].green = green_val * y * x;
-      imageIn->data[cur].blue = blue_val * y * x;
-      cur+=W; prev++;
-    }
-  }
-
 
   // Vertical
-  /*for(int i=0; i<W; i++)
+  for(int i=0; i<W; i++)
   {
     float red_val = 0.0;
     float green_val = 0.0;
     float blue_val = 0.0;
     int cur = i;
-    int prev = cur;
-    int next = cur + size*W;
+    int prev = cur*H;
+    int next = cur*H + size;
 
     float x = 1.0 / L;
     if (i<size) {
@@ -170,9 +112,9 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
 
     for(int j=0; j<size; j++) // initialize  values
     {
-      red_val += imageOut->data[cur+j*W].red;
-      green_val += imageOut->data[cur+j*W].green;
-      blue_val += imageOut->data[cur+j*W].blue;
+      red_val += imageOut->data[cur*H+j].red;
+      green_val += imageOut->data[cur*H+j].green;
+      blue_val += imageOut->data[cur*H+j].blue;
     }
     for(int j=0  ; j<=size ; j++) // Start edge
     {
@@ -183,7 +125,7 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
       imageIn->data[cur].red = red_val * y * x;
       imageIn->data[cur].green = green_val * y * x;
       imageIn->data[cur].blue = blue_val * y * x;
-      next+=W; cur+=W;
+      next++; cur+=W;
     }
     for(int j=size+1; j<H-size; j++) // Middle part
     {
@@ -193,7 +135,7 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
       imageIn->data[cur].red = red_val * rec * x;
       imageIn->data[cur].green = green_val * rec * x;
       imageIn->data[cur].blue = blue_val * rec * x;
-      prev+=W; next+=W; cur+=W;
+      prev++; next++; cur+=W;
     }
     for(int j=1; j<=size  ; j++) // End edge
     {
@@ -204,9 +146,9 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
       imageIn->data[cur].red = red_val * y * x;
       imageIn->data[cur].green = green_val * y * x;
       imageIn->data[cur].blue = blue_val * y * x;
-      prev+=W; cur+=W;
+      prev++; cur+=W;
     }
-  }*/
+  }
 }
 
 float getNewValue(float old_value) {
