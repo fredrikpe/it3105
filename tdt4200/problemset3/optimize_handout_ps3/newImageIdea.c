@@ -23,18 +23,21 @@ int H;
 // Convert ppm to high precision format.
 AccurateImage *convertImageToNewFormat(PPMImage *image) {
 	// Make a copy
-	AccurateImage *imageAccurate;
-	imageAccurate = (AccurateImage *)malloc(sizeof(AccurateImage));
-	imageAccurate->data = (AccuratePixel*)malloc(image->x * image->y * sizeof(AccuratePixel));
+
   W = image->x;
   H = image->y;
-	for(int i = 0; i < image->x * image->y; i++) {
-    imageAccurate->data[i].red   = (float) image->data[i].red;
-    imageAccurate->data[i].green = (float) image->data[i].green;
-    imageAccurate->data[i].blue  = (float) image->data[i].blue;
+
+	AccurateImage *imageAccurate;
+	imageAccurate = (AccurateImage *)malloc(sizeof(AccurateImage));
+	imageAccurate->data = (AccuratePixel*)malloc(W * H * sizeof(AccuratePixel));
+
+	for(int i = 0; i < W * H; i++) {
+    imageAccurate->data[i].red   = image->data[i].red;
+    imageAccurate->data[i].green = image->data[i].green;
+    imageAccurate->data[i].blue  = image->data[i].blue;
 	}
-	imageAccurate->x = image->x;
-	imageAccurate->y = image->y;
+	imageAccurate->x = W;
+	imageAccurate->y = H;
 
 	return imageAccurate;
 }
@@ -154,37 +157,75 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
 }
 
 float getNewValue(float old_value) {
-  old_value = floor(old_value);
+  //old_value = (old_value < -1.0) ?
+  if (old_value < -1)
+    old_value += 257;
   if(old_value > 255)
     return 255;
-  else if (old_value < -1.0) {   //old_value > -1.0 &&
-    old_value = 257.0+old_value;
-    if(old_value > 255)
-      return 255;
-    else
-      return  old_value;
-  } else if (old_value == -1.0) {
-    return 0;
-  } else {
-    return old_value;
-  }
+  return old_value;
 }
 
 // Perform the final step, and return it as ppm.
-PPMImage * performNewIdeaFinalization(AccurateImage *imageInSmall, AccurateImage *imageInLarge) {
+
+/*PPMImage ** performNewIdeaFinalization(AccurateImage *it, AccurateImage *is, AccurateImage *im, AccurateImage *il) {
+  PPMImage *iot;
+  iot = (PPMImage *)malloc(sizeof(PPMImage));
+  iot->data = (PPMPixel*)malloc(it->x * it->y * sizeof(PPMPixel));
+  iot->x = it->x;
+  iot->y = it->y;
+  PPMImage *ios;
+  ios = (PPMImage *)malloc(sizeof(PPMImage));
+  ios->data = (PPMPixel*)malloc(it->x * it->y * sizeof(PPMPixel));
+  ios->x = it->x;
+  ios->y = it->y;
+  PPMImage *iom;
+  iom = (PPMImage *)malloc(sizeof(PPMImage));
+  iom->data = (PPMPixel*)malloc(it->x * it->y * sizeof(PPMPixel));
+  iom->x = it->x;
+  iom->y = it->y;
+  PPMImage **final = (PPMImage **)malloc(3*sizeof(PPMImage));
+  final[0] = iot;
+  final[1] = ios;
+  final[2] = iom;
+  for(int i = 0; i < it->x * it->y; i++) {
+    float vtr = it->data[i].red;
+    float vtg = it->data[i].green;
+    float vtb = it->data[i].blue;
+    float vsr = is->data[i].red;
+    float vsg = is->data[i].green;
+    float vsb = is->data[i].blue;
+    float vmr = im->data[i].red;
+    float vmg = im->data[i].green;
+    float vmb = im->data[i].blue;
+    float vlr = il->data[i].red;
+    float vlg = il->data[i].green;
+    float vlb = il->data[i].blue;
+    iot->data[i].red = getNewValue(vsr-vtr);
+    iot->data[i].green = getNewValue(vsg-vtg);
+    iot->data[i].blue = getNewValue(vsb-vtb);
+    ios->data[i].red = getNewValue(vmr-vsr);
+    ios->data[i].green = getNewValue(vmg-vsg);
+    ios->data[i].blue = getNewValue(vmb-vsb);
+    iom->data[i].red = getNewValue(vlr-vmr);
+    iom->data[i].green = getNewValue(vlg-vmg);
+    iom->data[i].blue = getNewValue(vlb-vmb);
+  }
+  return final;
+}*/
+PPMImage * performNewIdeaFinalization(AccurateImage *is, AccurateImage *il) {
   PPMImage *imageOut;
   imageOut = (PPMImage *)malloc(sizeof(PPMImage));
-  imageOut->data = (PPMPixel*)malloc(imageInSmall->x * imageInSmall->y * sizeof(PPMPixel));
+  imageOut->data = (PPMPixel*)malloc(W * H * sizeof(PPMPixel));
 
-  imageOut->x = imageInSmall->x;
-  imageOut->y = imageInSmall->y;
+  imageOut->x = W;
+  imageOut->y = H;
 
-  for(int i = 0; i < imageInSmall->x * imageInSmall->y; i++) {
-    float value = (imageInLarge->data[i].red - imageInSmall->data[i].red);
+  for(int i = 0; i < W * H; i++) {
+    float value = (il->data[i].red - is->data[i].red);
     imageOut->data[i].red = getNewValue(value);
-    value = (imageInLarge->data[i].green - imageInSmall->data[i].green);
+    value = (il->data[i].green - is->data[i].green);
     imageOut->data[i].green = getNewValue(value);
-    value = (imageInLarge->data[i].blue - imageInSmall->data[i].blue);
+    value = (il->data[i].blue - is->data[i].blue);
     imageOut->data[i].blue = getNewValue(value);
   }
   return imageOut;
@@ -245,18 +286,28 @@ int main(int argc, char** argv) {
   performNewIdeaIteration(il1, il2, size);
 
 	// Save the images.
+
 	PPMImage *final_tiny = performNewIdeaFinalization(it2, is2);
 	PPMImage *final_small = performNewIdeaFinalization(is2, im2);
 	PPMImage *final_medium = performNewIdeaFinalization(im2, il2);
-
+  if(argc > 1) {
+    writePPM("flower_tiny.ppm", final_tiny);
+    writePPM("flower_small.ppm", final_small);
+    writePPM("flower_medium.ppm", final_medium);
+  } else {
+    writeStreamPPM(stdout, final_tiny);
+    writeStreamPPM(stdout, final_small);
+    writeStreamPPM(stdout, final_medium);
+  }
+  /*PPMImage **final = performNewIdeaFinalization(it2, is2, im2, il2);
 	if(argc > 1) {
-		writePPM("flower_tiny.ppm", final_tiny);
-		writePPM("flower_small.ppm", final_small);
-		writePPM("flower_medium.ppm", final_medium);
+		writePPM("flower_tiny.ppm", final[0]);
+		writePPM("flower_small.ppm", final[1]);
+		writePPM("flower_medium.ppm", final[2]);
 	} else {
-		writeStreamPPM(stdout, final_tiny);
-		writeStreamPPM(stdout, final_small);
-		writeStreamPPM(stdout, final_medium);
-	}
+		writeStreamPPM(stdout, final[0]);
+		writeStreamPPM(stdout, final[1]);
+		writeStreamPPM(stdout, final[2]);
+	}*/
 	return 0;
 }
