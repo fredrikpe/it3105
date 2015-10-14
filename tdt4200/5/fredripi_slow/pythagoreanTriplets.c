@@ -1,7 +1,6 @@
 #include <stdio.h> // for stdin
 #include <stdlib.h>
 #include <unistd.h> // for ssize_t
-#include <math.h>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -33,30 +32,19 @@ int run(int start, int stop, int numThreads) {
 
 	#pragma omp parallel for num_threads(numThreads) reduction(+:sum)
 	for (int a=3; a<stop-1; a++) {
-		for (int b=a+1; b<stop; b+=2) {
-			if (coPrime(a, b)) {
-				int c = b + 1;
-				while (c < start || c * c < a * a + b * b) {
-					c++;
-				}
-				if (c * c == a * a + b * b && c < stop) {
+		for (int b=a+1; b<stop; b++) {
+			int c = b + 1;
+			while (c * c < a * a + b * b || c < start) {
+				c++;
+			}
+			if (c * c == a * a + b * b && c < stop) {
+				if (coPrime(a, b) && coPrime(b, c) && coPrime(a,c)) {
 					sum++;
 				}
 			}
 		}
 	}
-	/*
-	#pragma omp parallel for num_threads(numThreads) reduction(+:sum)
-	for (int a=3; a<stop-1; a++) {
-		for (int b=a+1; b<stop; b+=2) {
-			if (coPrime(a, b)) {
-				float c = sqrt(a * a + b * b);
-				if (ceilf(c) == c && c >= start && c < stop) {
-					sum++;
-				}
-			}
-		}
-	}*/
+
 	return sum;
 }
 

@@ -1,7 +1,6 @@
 #include <stdio.h> // for stdin
 #include <stdlib.h>
 #include <unistd.h> // for ssize_t
-#include <math.h>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -18,10 +17,10 @@ int coPrime (int a, int b) { // Assumes a, b > 0
 int run(int start, int stop, int numThreads) {
 	if (numThreads == 0) numThreads = 1;
 	int sum = 0;
-	if (start == 0) start++; // Unnecessary
+	if (start == 0) start++;
 
 	int a, b, c;
-	/*#pragma omp parallel for num_threads(numThreads) reduction(+:sum)
+	#pragma omp parallel for num_threads(numThreads) reduction(+:sum)
 	for (int n=1; n<stop; n++) {
 		for (int m=n+1; m<stop; m+=2) {
 			//if (2*m*n >= start && m*m - n*n >= start)
@@ -29,34 +28,30 @@ int run(int start, int stop, int numThreads) {
 				sum++;
 			}
 		}
-	}*/
+	}
+	//#pragma omp parallel num_threads(numThreads)
+	//{
+		//int tid = omp_get_thread_num();
+	  //printf("Hello World from thread = %d\n", tid);
+	//}
 
-	#pragma omp parallel for num_threads(numThreads) reduction(+:sum)
-	for (int a=3; a<stop-1; a++) {
-		for (int b=a+1; b<stop; b+=2) {
-			if (coPrime(a, b)) {
-				int c = b + 1;
-				while (c < start || c * c < a * a + b * b) {
-					c++;
-				}
-				if (c * c == a * a + b * b && c < stop) {
+
+	/*
+	for (int a=start; a<stop-1; a++) {
+		for (int b=a+1; b<stop; b++) {
+			int c = b + 1;
+			while (c * c < a * a + b * b) {
+				c++;
+			}
+			if (c * c == a * a + b * b && c <= stop) {
+				if (coPrime(a, b) && coPrime(b, c) && coPrime(a,c)) {
+					printf("%d, %d, %d. ", a, b, c);
 					sum++;
 				}
 			}
 		}
 	}
-	/*
-	#pragma omp parallel for num_threads(numThreads) reduction(+:sum)
-	for (int a=3; a<stop-1; a++) {
-		for (int b=a+1; b<stop; b+=2) {
-			if (coPrime(a, b)) {
-				float c = sqrt(a * a + b * b);
-				if (ceilf(c) == c && c >= start && c < stop) {
-					sum++;
-				}
-			}
-		}
-	}*/
+	*/
 	return sum;
 }
 
