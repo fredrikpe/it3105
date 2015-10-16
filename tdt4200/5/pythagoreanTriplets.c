@@ -20,8 +20,7 @@ int run(int start, int stop, int numThreads) {
 	int sum = 0;
 	if (start == 0) start++; // Unnecessary
 
-	int a, b, c;
-	/*#pragma omp parallel for num_threads(numThreads) reduction(+:sum)
+	#pragma omp parallel for num_threads(numThreads) reduction(+:sum)
 	for (int n=1; n<stop; n++) {
 		for (int m=n+1; m<stop; m+=2) {
 			//if (2*m*n >= start && m*m - n*n >= start)
@@ -29,8 +28,9 @@ int run(int start, int stop, int numThreads) {
 				sum++;
 			}
 		}
-	}*/
+	}
 
+	/*
 	#pragma omp parallel for num_threads(numThreads) reduction(+:sum)
 	for (int a=3; a<stop-1; a++) {
 		for (int b=a+1; b<stop; b+=2) {
@@ -44,7 +44,7 @@ int run(int start, int stop, int numThreads) {
 				}
 			}
 		}
-	}
+	}*/
 	/*
 	#pragma omp parallel for num_threads(numThreads) reduction(+:sum)
 	for (int a=3; a<stop-1; a++) {

@@ -21,33 +21,76 @@
 	}
 	return (x + y) == 1;
 }*/
-int coPrime2(int a, int b)
+int gcd(int a, int b)
 {
 	while (1) {
 		a %= b;
-		if (a == 0) return b == 1;
+		if (a == 0) return b;
 		b %= a;
-		if (b == 0) return a == 1;
+		if (b == 0) return a;
 	}
 }
-/*int coPrime3(int a, int b) {
-	return (a<b) ? coPrime3(b,a) : !(a % b) ? (b==1) : coPrime3(b, a%b);
-}*/
+
+//int primes[5] = {3,5,7,11,13};
 
 
-int run(int start, int stop, int numThreads) {
+int * factors(int n) {
+	int *f = (int*)calloc(5, sizeof(int));
+	int c = 0;
+	int tmp = n;
+	for (int i=3;i<10000;i++) {
+		if (i <= tmp) {
+			if (tmp % i == 0) {
+				f[c++] = i;
+				tmp = tmp / i;
+			}
+		} else {
+			break;
+		}
+	}
+	int *d = (int*)calloc(c+1, sizeof(int));
+	int b= 1;
+	d[0] = c;
+	for (int i=0;i<5;i++) {
+		if (f[i] != 0) {
+			d[b++] = f[i];
+		}
+	}
+	return d;
+}
+
+
+
+int run(int start, int stop, int numThreads, int mystart, int myend) {
 	if (numThreads <= 0 || numThreads > 10) // First nt_value is sometimes way off idk why.
 		numThreads = 1;
 	int sum = 0;
 
+	if (mystart == 0) mystart++;
+
 	#pragma omp parallel for num_threads(numThreads) reduction(+:sum)
-	for (int n=1; n<stop; n++) {
-		for (int m=n+1; m<stop; m+=2) {
-			if (coPrime2(m, n) && m*m + n*n >= start && m*m + n*n < stop) {
-				sum++;
+	for (int n=mystart; n<myend; n++) {
+		int *d = factors(n);
+		int *d_c = factors(n);
+		for (int i=1;i<=d[0];i++) {
+			d[i] += n;
+		}
+		for (int m=n+1; m<myend; m+=2) {
+			int b = 1;
+			for (int i=1;i<=d[0];i++) {
+				if (m == d[i]) {
+					d[i] += d_c[i]*2;
+					b = 0;
+				}
+			}
+			if (b) {
+				if (m*m + n*n >= start && m*m + n*n < stop) {
+					sum++;
+				}
 			}
 		}
 	}
+
 
 	/*
 	#pragma omp parallel for num_threads(numThreads) reduction(+:sum)
@@ -149,8 +192,6 @@ int main(int argc, char **argv) {
 
 	for (int i=0; i < amountOfRuns; i++){
 		int cnt = numThreads[i];
-		if (cnt <= 0 || cnt > 10) // First nt_value is sometimes way off idk why.
-			cnt = 1;
 		int cstop = stop[i];
 		int cstart = start[i];
 		int tmp_sum = 0;
@@ -165,31 +206,7 @@ int main(int argc, char **argv) {
 		}
 		if (mystart == 0) mystart++;
 
-		#pragma omp parallel for num_threads(cnt) reduction(+:tmp_sum)
-		for (int n=mystart; n<myend; n++) {
-			for (int m=n+1; m<cstop; m+=2) {
-				if (coPrime(m, n) && m*m + n*n >= cstart && m*m + n*n < cstop) {
-					tmp_sum++;
-				}
-			}
-		}
-
-		// Slower
-		/*
-		#pragma omp parallel for num_threads(cnt) reduction(+:tmp_sum)
-		for (int a=mystart; a<myend; a++) {
-			for (int b=a+1; b<cstop; b+=2) {
-				if (coPrime(a, b)) {
-					double z = (double) (a*a + b*b);
-					double c = sqrt(z);
-					int root_z = (int)c;
-					if (root_z * root_z == z &&  c >= cstart && c < cstop) {
-						tmp_sum++;
-					}
-				}
-			}
-		}*/
-		sum[i] = tmp_sum;
+		sum[i] = run(cstart, cstop, cnt, mystart, myend);
 
 	}
 
@@ -204,12 +221,12 @@ int main(int argc, char **argv) {
 			}
 		}
 		for (int u=0;u<amountOfRuns;u++) {
-			printf("total sum: %d\n", ns[u]);
+			printf("%d\n", ns[u]);
 		}
 	}
 	#else
 	for (int i=0; i < amountOfRuns; i++){
-		int s = run(start[i], stop[i], numThreads[i]);
+		int s = run(start[i], stop[i], numThreads[i], 0, stop[i]);
 		printf("%d\n", s);
 	}
 	#endif
