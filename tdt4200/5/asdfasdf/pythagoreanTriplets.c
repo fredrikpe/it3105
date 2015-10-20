@@ -11,19 +11,9 @@
 #include <omp.h>
 #endif
 
-
-/*int coPrime1(int x, int y) {
-	while (x != 0 && y != 0) {
-		if (x >= y)
-			x = x % y;
-		else
-			y = y % x;
-	}
-	return (x + y) == 1;
-}*/
 int gcd(int a, int b)
 {
-	while (1) {
+	for (;;) {
 		a %= b;
 		if (a == 0) return b;
 		b %= a;
@@ -31,88 +21,28 @@ int gcd(int a, int b)
 	}
 }
 
-//int primes[5] = {3,5,7,11,13};
-
-
-int * factors(int n) {
-	int *f = (int*)calloc(5, sizeof(int));
-	int c = 0;
-	int tmp = n;
-	for (int i=3;i<10000;i++) {
-		if (i <= tmp) {
-			if (tmp % i == 0) {
-				f[c++] = i;
-				tmp = tmp / i;
-			}
-		} else {
-			break;
-		}
-	}
-	int *d = (int*)calloc(c+1, sizeof(int));
-	int b= 1;
-	d[0] = c;
-	for (int i=0;i<5;i++) {
-		if (f[i] != 0) {
-			d[b++] = f[i];
-		}
-	}
-	return d;
-}
-
-
-
 int run(int start, int stop, int numThreads, int mystart, int myend) {
 	if (numThreads <= 0 || numThreads > 10) // First nt_value is sometimes way off idk why.
 		numThreads = 1;
-	int sum = 0;
-
 	if (mystart == 0) mystart++;
 
+	int sum = 0;
+
 	#pragma omp parallel for num_threads(numThreads) reduction(+:sum)
-	for (int n=mystart; n<myend; n++) {
-		int *d = factors(n);
-		int *d_c = factors(n);
-		for (int i=1;i<=d[0];i++) {
-			d[i] += n;
-		}
-		for (int m=n+1; m<myend; m+=2) {
-			int b = 1;
-			for (int i=1;i<=d[0];i++) {
-				if (m == d[i]) {
-					d[i] += d_c[i]*2;
-					b = 0;
-				}
-			}
-			if (b) {
-				if (m*m + n*n >= start && m*m + n*n < stop) {
-					sum++;
-				}
-			}
+	for (int n=mystart; n<myend; n++) { // First for loop
+		if (n*n > stop)
+			n = myend;
+		for (int m=n+1; m<myend; m+=2) {  // Second for loop
+			if (m*m + n*n > stop)
+				break;
+			if (m*m + n*n >= start && gcd(m, n) == 1)
+				sum++;
 		}
 	}
-
-
-	/*
-	#pragma omp parallel for num_threads(numThreads) reduction(+:sum)
-	for (int a=3; a<stop-1; a++) {
-		for (int b=a+1; b<stop; b+=2) {
-			if (coPrime(a, b)) {
-				double z = (double) (a*a + b*b);
-				double c = sqrt(z);
-				int root_z = (int)c;
-				if (root_z * root_z == z &&  c >= start && c < stop) {
-					sum++;
-				}
-			}
-		}
-	}*/
 	return sum;
 }
 
-
-
 int main(int argc, char **argv) {
-
 
 	int rank, size;
 	int *start, *stop, *numThreads;
@@ -153,9 +83,10 @@ int main(int argc, char **argv) {
 		stop = (int*) calloc(amountOfRuns, sizeof(int));
 		start = (int*) calloc(amountOfRuns, sizeof(int));
 		numThreads = (int*) calloc(amountOfRuns, sizeof(int));
-		sum = (int*) calloc(amountOfRuns, sizeof(int));
-		if (size != 0)
+		if (size != 0) {
+			sum = (int*) calloc(amountOfRuns, sizeof(int));
 			total_sum = (int*) calloc(amountOfRuns*size, sizeof(int));
+		}
 
 		int tot_threads, current_start, current_stop;
 		for (int i = 0; i < amountOfRuns; ++i){
@@ -224,6 +155,7 @@ int main(int argc, char **argv) {
 			printf("%d\n", ns[u]);
 		}
 	}
+	MPI_Finalize();
 	#else
 	for (int i=0; i < amountOfRuns; i++){
 		int s = run(start[i], stop[i], numThreads[i], 0, stop[i]);
@@ -231,13 +163,5 @@ int main(int argc, char **argv) {
 	}
 	#endif
 
-
-	/*
-	*	Remember to only print 1 (one) sum per start/stop.
-	*	In other words, a total of <amountOfRuns> sums/printfs.
-	*/
-	#ifdef HAVE_MPI
-	MPI_Finalize();
-	#endif
 	return 0;
 }
