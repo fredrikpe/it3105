@@ -60,29 +60,32 @@ void freeImage(AccurateImage *image)
 void horizontalAvg(AccurateImage *imageOut, AccuratePixel *line_buffer, float rec, int W, int starty, int endy, int senterY, int size)
 {
   v4f sum_rgb = {0, 0, 0, 0};
-  for(int i=0; i<W; i++)
+  for (int x=0; x < size; x++){
+    sum_rgb += line_buffer[x].rgb;
+  }
+  for(int i=0; i<=size; i++)
+  {
+    int endx = i+size;
+    int startx = 0;
+    sum_rgb +=line_buffer[endx].rgb;
+    rec = 1.0 / ((endx+1)*(endy-starty+1));
+    imageOut->data[W * senterY + i].rgb = sum_rgb * rec;
+  }
+  for(int i=size+1; i<W-size; i++)
   {
     int startx = i-size;
     int endx = i+size;
-    if (startx <=0){
-      startx = 0;
-      if(i==0){
-        for (int x=startx; x < endx; x++){
-          sum_rgb += line_buffer[x].rgb;
-        }
-      }
-      sum_rgb +=line_buffer[endx].rgb;
-      rec = 1.0 / ((endx+1)*(endy-starty+1));
-    }else if (endx >= W){
-      endx = W-1;
-      sum_rgb -= line_buffer[startx-1].rgb;
-      rec = 1.0 / ((endx-startx+1)*(endy-starty+1));
-    }else{
-      sum_rgb += (line_buffer[endx].rgb-line_buffer[startx-1].rgb);
-    }
-    // we save each pixel in the output image
+    sum_rgb += (line_buffer[endx].rgb-line_buffer[startx-1].rgb);
     imageOut->data[W * senterY + i].rgb = sum_rgb * rec;
-	}
+  }
+  for(int i=W-size; i<W; i++)
+  {
+    int startx = i-size;
+    int endx = W-1;
+    sum_rgb -= line_buffer[startx-1].rgb;
+    rec = 1.0 / ((endx-startx+1)*(endy-starty+1));
+    imageOut->data[W * senterY + i].rgb = sum_rgb * rec;
+  }
 }
 
 // Perform the new idea:
@@ -100,20 +103,16 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
   int starty;
   int endy;
 
+  for(int line_y=0; line_y < size; line_y++){
+    for(int i=0; i<W; i++){
+      line_buffer[i].rgb += imageIn->data[W*line_y+i].rgb;
+    }
+  }
 	// Iterate over each line of pixelx.
 	for(int senterY = 0; senterY <= size; senterY++) {
 		// first and last line considered  by the computation of the pixel in the line senterY
-		starty = 0;
 		endy = senterY+size;
 		starty = 0;
-		if(senterY == 0)
-    {
-			for(int line_y=starty; line_y < endy; line_y++){
-				for(int i=0; i<W; i++){
-					line_buffer[i].rgb += imageIn->data[W*line_y+i].rgb;
-				}
-			}
-		}
     for(int i=0; i<W; i++)
     {
       line_buffer[i].rgb += imageIn->data[W*endy+i].rgb;
