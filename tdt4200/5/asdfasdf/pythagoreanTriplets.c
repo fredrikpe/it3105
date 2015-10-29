@@ -11,9 +11,14 @@
 #include <omp.h>
 #endif
 
+/* GCD
+* I tried a binary gcd version, but it was slower at least on my own system.
+*
+*/
 int gcd(int a, int b)
 {
-	for (;;) {
+	for (;;)
+	{
 		a %= b;
 		if (a == 0) return b;
 		b %= a;
@@ -24,15 +29,22 @@ int gcd(int a, int b)
 int run(int start, int stop, int numThreads, int mystart, int myend) {
 	if (numThreads <= 0 || numThreads > 10) // First nt_value is sometimes way off idk why.
 		numThreads = 1;
+
 	if (mystart == 0) mystart++;
 
 	int sum = 0;
 
+	/*
+	* Euclids method.
+	*
+	*/
 	#pragma omp parallel for num_threads(numThreads) reduction(+:sum)
-	for (int n=mystart; n<myend; n++) { // First for loop
+	for (int n=mystart; n<myend; n++) // First for-loop
+	{
 		if (n*n > stop)
 			n = myend;
-		for (int m=n+1; m<myend; m+=2) {  // Second for loop
+		for (int m=n+1; m<myend; m+=2)  // Second for-loop
+		{
 			if (m*m + n*n > stop)
 				break;
 			if (m*m + n*n >= start && gcd(m, n) == 1)
@@ -119,8 +131,6 @@ int main(int argc, char **argv) {
 	MPI_Bcast(start, amountOfRuns,MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(numThreads, amountOfRuns,MPI_INT, 0, MPI_COMM_WORLD);
 
-	// divide loop
-
 	for (int i=0; i < amountOfRuns; i++){
 		int cnt = numThreads[i];
 		int cstop = stop[i];
@@ -128,6 +138,7 @@ int main(int argc, char **argv) {
 		int tmp_sum = 0;
 		int mystart = (cstop / size) * rank;
 		int myend;
+		// divide loop
 		if (cstop % size > rank){
 			mystart += rank;
 			myend = mystart + (cstop / size) + 1;
@@ -142,7 +153,7 @@ int main(int argc, char **argv) {
 	}
 
 	MPI_Gather(sum, amountOfRuns, MPI_INT, total_sum, amountOfRuns, MPI_INT, 0, MPI_COMM_WORLD);
-
+	// Printing results (stored in total_sum)
 	if (rank == 0) {
 		int *ns;
 		ns = (int*)calloc(amountOfRuns, sizeof(int));
