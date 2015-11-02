@@ -9,9 +9,6 @@
 // Image from:
 // http://7-themes.com/6971875-funny-flowers-pictures.html
 
-/*typedef struct {
-    float red,green,blue; // TODO: this must probably be changed for a SIMD version.
-} AccuratePixel;*/
 typedef float v4f __attribute__ ((vector_size (16)));
 typedef struct {
     v4f rgb;
@@ -60,9 +57,11 @@ void freeImage(AccurateImage *image)
 void horizontalAvg(AccurateImage *imageOut, AccuratePixel *line_buffer, float rec, int W, int starty, int endy, int senterY, int size)
 {
   v4f sum_rgb = {0, 0, 0, 0};
+  // Initialization
   for (int x=0; x < size; x++){
     sum_rgb += line_buffer[x].rgb;
   }
+  // Start edge
   for(int i=0; i<=size; i++)
   {
     int endx = i+size;
@@ -71,6 +70,7 @@ void horizontalAvg(AccurateImage *imageOut, AccuratePixel *line_buffer, float re
     rec = 1.0 / ((endx+1)*(endy-starty+1));
     imageOut->data[W * senterY + i].rgb = sum_rgb * rec;
   }
+  // Middle part
   for(int i=size+1; i<W-size; i++)
   {
     int startx = i-size;
@@ -78,6 +78,7 @@ void horizontalAvg(AccurateImage *imageOut, AccuratePixel *line_buffer, float re
     sum_rgb += (line_buffer[endx].rgb-line_buffer[startx-1].rgb);
     imageOut->data[W * senterY + i].rgb = sum_rgb * rec;
   }
+  // End edge
   for(int i=W-size; i<W; i++)
   {
     int startx = i-size;
@@ -96,19 +97,20 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
   int W = imageIn->x;
   int H = imageIn->y;
 
-	// line buffer that will save the sum of some pixel in the column
+	// Line buffer for the vertical sums
 	AccuratePixel *line_buffer = (AccuratePixel*)malloc(W*sizeof(AccuratePixel));
 	memset(line_buffer,0,W*sizeof(AccuratePixel));
 
   int starty;
   int endy;
 
+  // Some initialization
   for(int line_y=0; line_y < size; line_y++){
     for(int i=0; i<W; i++){
       line_buffer[i].rgb += imageIn->data[W*line_y+i].rgb;
     }
   }
-	// Iterate over each line of pixelx.
+	// Start edge
 	for(int senterY = 0; senterY <= size; senterY++) {
 		// first and last line considered  by the computation of the pixel in the line senterY
 		endy = senterY+size;
@@ -119,6 +121,7 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
     }
     horizontalAvg(imageOut, line_buffer, rec, W, starty, endy, senterY, size);
   }
+  // Middle part
   for(int senterY = size+1; senterY < H-size; senterY++) {
     starty = senterY-size;
     endy = senterY+size;
@@ -128,6 +131,7 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
     }
     horizontalAvg(imageOut, line_buffer, rec, W, starty, endy, senterY, size);
   }
+  // End edge
   endy = H-1;
   for(int senterY = H-size; senterY < H; senterY++) {
     starty = senterY-size;
@@ -150,7 +154,7 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
   return old_value;
 }*/
 // Perform the final step, and save it as a ppm in imageOut
-void performNewIdeaFinalization(AccurateImage *imageInSmall, AccurateImage *imageInLarge, PPMImage *imageOut)
+void performNewIdeaFinalization(AccurateImage *imageInSmall, AccurateImage *imageInLarge, PPMImage *imageOut, int argc, int size)
 {
 	imageOut->x = imageInSmall->x;
 	imageOut->y = imageInSmall->y;
@@ -160,6 +164,16 @@ void performNewIdeaFinalization(AccurateImage *imageInSmall, AccurateImage *imag
 		imageOut->data[i].red = (int) values[0];
 		imageOut->data[i].green = (int) values[1];
 		imageOut->data[i].blue = (int) values[2];
+  }
+  if(argc > 1) {
+    if (size == 0)
+      writePPM("flower_tiny.ppm", imageOut);
+    else if (size == 1)
+      writePPM("flower_small.ppm", imageOut);
+    else
+      writePPM("flower_medium.ppm", imageOut);
+  } else {
+    writeStreamPPM(stdout, imageOut);
   }
 }
 
@@ -171,6 +185,7 @@ void process(AccurateImage *imageNew, AccurateImage *imageUnchanged, AccurateIma
   performNewIdeaIteration(imageBuffer, imageNew, size);
   performNewIdeaIteration(imageNew, imageBuffer, size);
 }
+
 
 int main(int argc, char** argv)
 {
@@ -194,38 +209,25 @@ int main(int argc, char** argv)
 
 	// Process the tiny case:
   process(imageSmall, imageUnchanged, imageBuffer, 2);
-	// Process the small case:
+
+  // Process the small case:
   process(imageBig, imageUnchanged, imageBuffer, 3);
 
 	// save tiny case result
-	performNewIdeaFinalization(imageSmall, imageBig, imageOut);
-	if(argc > 1) {
-		writePPM("flower_tiny.ppm", imageOut);
-	} else {
-		writeStreamPPM(stdout, imageOut);
-	}
+	performNewIdeaFinalization(imageSmall, imageBig, imageOut, argc, 0);
 
 	// Process the medium case:
   process(imageSmall, imageUnchanged, imageBuffer, 5);
 
 	// save small case
-	performNewIdeaFinalization(imageBig, imageSmall,imageOut);
-	if(argc > 1) {
-		writePPM("flower_small.ppm", imageOut);
-	} else {
-		writeStreamPPM(stdout, imageOut);
-	}
+	performNewIdeaFinalization(imageBig, imageSmall, imageOut, argc, 1);
 
 	// process the large case
   process(imageBig, imageUnchanged, imageBuffer, 8);
 
   // save the medium case
-	performNewIdeaFinalization(imageSmall, imageBig, imageOut);
-	if(argc > 1) {
-		writePPM("flower_medium.ppm", imageOut);
-	} else {
-		writeStreamPPM(stdout, imageOut);
-	}
+	performNewIdeaFinalization(imageSmall, imageBig, imageOut, argc, 3);
+
 
 	// free all memory structures
 	freeImage(imageUnchanged);
