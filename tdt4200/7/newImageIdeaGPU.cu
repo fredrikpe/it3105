@@ -7,19 +7,6 @@
 // Image from:
 // http://7-themes.com/6971875-funny-flowers-pictures.html
 
-// TODO: You must implement this
-// The handout code is much simpler than the MPI/OpenMP versions
-//__global__ void performNewIdeaIterationGPU( ... ) { ... }
-
-// TODO: You should implement this
-//__global__ void performNewIdeaFinalizationGPU( ... ) { ... }
-
-// TODO: You should implement this
-//__global__ void convertImageToNewFormatGPU( ... ) { ... }
-
-// Perhaps some extra kernels will be practical as well?
-//__global__ void ...GPU( ... ) { ... }
-
 typedef struct {
      float red,green,blue;
 } AccuratePixel;
@@ -29,21 +16,17 @@ typedef struct {
      AccuratePixel *data;
 } AccurateImage;
 
-// Convert a PPM image to a high-precision format 
-AccurateImage *convertImageToNewFormat(PPMImage *image) {
-	// Make a copy
-	AccurateImage *imageAccurate;
-	imageAccurate = (AccurateImage *)malloc(sizeof(AccurateImage));
-	imageAccurate->data = (AccuratePixel*)malloc(image->x * image->y * sizeof(AccuratePixel));
-	for(int i = 0; i < image->x * image->y; i++) {
-		imageAccurate->data[i].red   = (float) image->data[i].red;
-		imageAccurate->data[i].green = (float) image->data[i].green;
-		imageAccurate->data[i].blue  = (float) image->data[i].blue;
+// Convert a PPM image to a high-precision format
+__global__ void convertImageToNewFormatGPU(AccurateImage *imageNew, PPMImage *image) {
+  int pixels_per_column = element_count / gridDim.x;
+  int start = (blockIdx.x * pixels_per_column) + threadIdx.x;
+  int stop =  ((blockIdx.x + 1) * pixels_per_column);
+  for(int i = start; i < stop; i += blockDim.x)
+  {
+		imageNew->data[i].red   = (float) image->data[i].red;
+		imageNew->data[i].green = (float) image->data[i].green;
+		imageNew->data[i].blue  = (float) image->data[i].blue;
 	}
-	imageAccurate->x = image->x;
-	imageAccurate->y = image->y;
-	
-	return imageAccurate;
 }
 
 // Convert a high-precision format to a PPM image
@@ -59,18 +42,8 @@ PPMImage *convertNewFormatToPPM(AccurateImage *image) {
 	}
 	imagePPM->x = image->x;
 	imagePPM->y = image->y;
-	
-	return imagePPM;
-}
 
-AccurateImage *createEmptyImage(PPMImage *image){
-	AccurateImage *imageAccurate;
-	imageAccurate = (AccurateImage *)malloc(sizeof(AccurateImage));
-	imageAccurate->data = (AccuratePixel*)malloc(image->x * image->y * sizeof(AccuratePixel));
-	imageAccurate->x = image->x;
-	imageAccurate->y = image->y;
-	
-	return imageAccurate;
+	return imagePPM;
 }
 
 // free memory of an AccurateImage
@@ -79,199 +52,181 @@ void freeImage(AccurateImage *image){
 	free(image);
 }
 
-void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, int size) {
-	
-	// Iterate over each pixel
-	for(int senterX = 0; senterX < imageIn->x; senterX++) {
-	
-		for(int senterY = 0; senterY < imageIn->y; senterY++) {
-			
-			// For each pixel we compute the magic number
-			float sumR = 0;
-			float sumG = 0;
-			float sumB = 0;
-			int countIncluded = 0;
-			for(int x = -size; x <= size; x++) {
-			
-				for(int y = -size; y <= size; y++) {
-					int currentX = senterX + x;
-					int currentY = senterY + y;
-					
-					// Check if we are outside the bounds
-					if(currentX < 0)
-						continue;
-					if(currentX >= imageIn->x)
-						continue;
-					if(currentY < 0)
-						continue;
-					if(currentY >= imageIn->y)
-						continue;
-					
-					// Now we can begin
-					int numberOfValuesInEachRow = imageIn->x; 
-					int offsetOfThePixel = (numberOfValuesInEachRow * currentY + currentX);
-					sumR += imageIn->data[offsetOfThePixel].red;
-					sumG += imageIn->data[offsetOfThePixel].green;
-					sumB += imageIn->data[offsetOfThePixel].blue;
-				
-					// Keep track of how many values we have included
-					countIncluded++;
-				}
-			
+__global__ void performNewIdeaIterationGPU(AccurateImage *imageOut, AccurateImage *imageIn, int size) {
+  // This assumes that (channels * width * height) is divisible by (number of blocks)
+  int pixels_per_column = element_count / gridDim.x;
+
+  // The start index of a single thread is the start location of the block,
+  // plus the thread's index within the block
+  int start = (blockIdx.x * pixels_per_column) + threadIdx.x;
+
+  // Run until the start index of the next block
+  int stop =  ((blockIdx.x + 1) * pixels_per_column);
+
+  int W = imageIn->x;
+  int H = imageIn->y;
+
+
+  for(int i = start; i < stop; i += blockDim.x) {
+		// For each pixel we compute the magic number
+		float sumR = 0;
+		float sumG = 0;
+		float sumB = 0;
+		int countIncluded = 0;
+    int senterY = (i+1) / H;
+    int senterX = i - W * senterY;
+
+		for(int x = -size; x <= size; x++) {
+
+			for(int y = -size; y <= size; y++) {
+				int currentX = senterX + x;
+				int currentY = senterY + y;
+
+				// Check if we are outside the bounds
+				if(currentX < 0)
+					continue;
+				if(currentX >= W)
+					continue;
+				if(currentY < 0)
+					continue;
+				if(currentY >= H)
+					continue;
+
+				// Now we can begin
+				int numberOfValuesInEachRow = imageIn->x;
+				int offsetOfThePixel = (numberOfValuesInEachRow * currentY + currentX);
+				sumR += imageIn->data[offsetOfThePixel].red;
+				sumG += imageIn->data[offsetOfThePixel].green;
+				sumB += imageIn->data[offsetOfThePixel].blue;
+
+				// Keep track of how many values we have included
+				countIncluded++;
 			}
-			
-			// Now we compute the final value for all colours
-			float valueR = sumR / countIncluded;
-			float valueG = sumG / countIncluded;
-			float valueB = sumB / countIncluded;
-			
-			// Update the output image
-			int numberOfValuesInEachRow = imageOut->x; // R, G and B
-			int offsetOfThePixel = (numberOfValuesInEachRow * senterY + senterX);
-			imageOut->data[offsetOfThePixel].red = valueR;
-			imageOut->data[offsetOfThePixel].green = valueG;
-			imageOut->data[offsetOfThePixel].blue = valueB;
 		}
+
+		// Now we compute the final value for all colours
+		float valueR = sumR / countIncluded;
+		float valueG = sumG / countIncluded;
+		float valueB = sumB / countIncluded;
+
+		// Update the output image
+		int numberOfValuesInEachRow = imageOut->x; // R, G and B
+		int offsetOfThePixel = (numberOfValuesInEachRow * senterY + senterX);
+		imageOut->data[offsetOfThePixel].red = valueR;
+		imageOut->data[offsetOfThePixel].green = valueG;
+		imageOut->data[offsetOfThePixel].blue = valueB;
 	}
 }
 
 // Perform the final step, and save it as a ppm in imageOut
-void performNewIdeaFinalization(AccurateImage *imageInSmall, AccurateImage *imageInLarge, PPMImage *imageOut) {
+__global__ void performNewIdeaFinalizationGPU(AccurateImage *imageInSmall, AccurateImage *imageInLarge, PPMImage *imageOut)
+{
+  int pixels_per_column = element_count / gridDim.x;
+  int start = (blockIdx.x * pixels_per_column) + threadIdx.x;
+  int stop =  ((blockIdx.x + 1) * pixels_per_column);
 
-	
-	imageOut->x = imageInSmall->x;
-	imageOut->y = imageInSmall->y;
-	
-	for(int i = 0; i < imageInSmall->x * imageInSmall->y; i++) {
-		float value = (imageInLarge->data[i].red - imageInSmall->data[i].red);
-		if(value > 255.0f)
-			imageOut->data[i].red = 255;
-		else if (value < -1.0f) {
-			value = 257.0f+value;
-			if(value > 255.0f)
-				imageOut->data[i].red = 255;
-			else
-				imageOut->data[i].red = floorf(value);
-		} else if (value > -1.0f && value < 0.0f) {
-			imageOut->data[i].red = 0;
-		} else {
-			imageOut->data[i].red = floorf(value);
-		}
-		
-		value = (imageInLarge->data[i].green - imageInSmall->data[i].green);
-		if(value > 255.0f)
-			imageOut->data[i].green = 255;
-		else if (value < -1.0f) {
-			value = 257.0f+value;
-			if(value > 255.0f)
-				imageOut->data[i].green = 255;
-			else
-				imageOut->data[i].green = floorf(value);
-		} else if (value > -1.0f && value < 0.0f) {
-			imageOut->data[i].green = 0;
-		} else {
-			imageOut->data[i].green = floorf(value);
-		}
-		
-		value = (imageInLarge->data[i].blue - imageInSmall->data[i].blue);
-		if(value > 255.0f)
-			imageOut->data[i].blue = 255;
-		else if (value < -1.0f) {
-			value = 257.0f+value;
-			if(value > 255.0f)
-				imageOut->data[i].blue = 255;
-			else
-				imageOut->data[i].blue = floorf(value);
-		} else if (value > -1.0f && value < 0.0f) {
-			imageOut->data[i].blue = 0;
-		} else {
-			imageOut->data[i].blue = floorf(value);
-		}
-	}
+  imageOut->x = imageInSmall->x;
+  imageOut->y = imageInSmall->y;
+
+  for(int i = start; i < stop; i += blockDim.x) {
+  {
+    float value = imageInLarge->data[i].red - imageInSmall->data[i].red;
+    imageOut->data[i].red = (int) value;
+    value = imageInLarge->data[i].green - imageInSmall->data[i].green;
+    imageOut->data[i].green = (int) value;
+    value = imageInLarge->data[i].blue - imageInSmall->data[i].blue;
+    imageOut->data[i].blue = (int) value;
+  }
+}
+
+__global__ void fiveIterationsGPU(AccurateImage *imageNew, AccurateImage *imageUnchanged, AccurateImage *imageBuffer, int size)
+{
+  performNewIdeaIterationGPU<<<5, 32>>>(imageNew, imageUnchanged, size);
+  performNewIdeaIterationGPU<<<5, 32>>>(imageBuffer, imageNew, size);
+  performNewIdeaIterationGPU<<<5, 32>>>(imageNew, imageBuffer, size);
+  performNewIdeaIterationGPU<<<5, 32>>>(imageBuffer, imageNew, size);
+  performNewIdeaIterationGPU<<<5, 32>>>(imageNew, imageBuffer, size);
 }
 
 int main(int argc, char** argv) {
-	
+
 	PPMImage *image;
-        
+
 	if(argc > 1) {
 		image = readPPM("flower.ppm");
 	} else {
 		image = readStreamPPM(stdin);
 	}
 
-	AccurateImage *imageUnchanged = convertImageToNewFormat(image); // save the unchanged image from input image
-	AccurateImage *imageBuffer = createEmptyImage(image);
-	AccurateImage *imageSmall = createEmptyImage(image);
-	AccurateImage *imageBig = createEmptyImage(image);
-	
-	PPMImage *imageOut;
-	imageOut = (PPMImage *)malloc(sizeof(PPMImage));
-	imageOut->data = (PPMPixel*)malloc(image->x * image->y * sizeof(PPMPixel));
+  int W = image->x;
+  int H = image->y;
+  const int numBlocks = 5;				// Total number of blocks
+  const int numThreads = 32;				// Threads per block. 32 is the recommended size by nvidia,
 
-	// Process the tiny case:
-	performNewIdeaIteration(imageSmall, imageUnchanged, 2);
-	performNewIdeaIteration(imageBuffer, imageSmall, 2);
-	performNewIdeaIteration(imageSmall, imageBuffer, 2);
-	performNewIdeaIteration(imageBuffer, imageSmall, 2);
-	performNewIdeaIteration(imageSmall, imageBuffer, 2);
-	
-	// Process the small case:
-	performNewIdeaIteration(imageBig, imageUnchanged,3);
-	performNewIdeaIteration(imageBuffer, imageBig,3);
-	performNewIdeaIteration(imageBig, imageBuffer,3);
-	performNewIdeaIteration(imageBuffer, imageBig,3);
-	performNewIdeaIteration(imageBig, imageBuffer,3);
-	
-	// save tiny case result
-	performNewIdeaFinalization(imageSmall,  imageBig, imageOut);
-	if(argc > 1) {
-		writePPM("flower_tiny.ppm", imageOut);
-	} else {
-		writeStreamPPM(stdout, imageOut);
-	}
+  size_t image_size = sizeof(AccurateImage);
+  size_t data_size = sizeof(AccuratePixel) * W * H;
+  size_t PPMimage_size = sizeof(PPMImage);
+  size_t PPMdata_size = sizeof(PPMPixel) * W * H;
 
-	
-	// Process the medium case:
-	performNewIdeaIteration(imageSmall, imageUnchanged, 5);
-	performNewIdeaIteration(imageBuffer, imageSmall, 5);
-	performNewIdeaIteration(imageSmall, imageBuffer, 5);
-	performNewIdeaIteration(imageBuffer, imageSmall, 5);
-	performNewIdeaIteration(imageSmall, imageBuffer, 5);
-	
-	// save small case
-	performNewIdeaFinalization(imageBig,  imageSmall,imageOut);
-	if(argc > 1) {
-		writePPM("flower_small.ppm", imageOut);
-	} else {
-		writeStreamPPM(stdout, imageOut);
-	}
+  AccurateImage *imageUnchanged;
+  AccurateImage *imageBuffer;
+  AccurateImage *imageSmall;
+  AccurateImage *imageBig;
+  PPMImage *imageOut;
 
-	// process the large case
-	performNewIdeaIteration(imageBig, imageUnchanged, 8);
-	performNewIdeaIteration(imageBuffer, imageBig, 8);
-	performNewIdeaIteration(imageBig, imageBuffer, 8);
-	performNewIdeaIteration(imageBuffer, imageBig, 8);
-	performNewIdeaIteration(imageBig, imageBuffer, 8);
+  // Allocate memory on the GPU
+  cudaMalloc((void**) &imageUnchanged, image_size);
+  cudaMalloc((void**) &imageUnchanged.data, data_size);
+  cudaMalloc((void**) &imageBuffer, image_size);
+  cudaMalloc((void**) &imageBuffer.data, data_size);
+  cudaMalloc((void**) &imageSmall, image_size);
+  cudaMalloc((void**) &imageSmall.data, data_size);
+  cudaMalloc((void**) &imageBig, image_size);
+  cudaMalloc((void**) &imageBig.data, data_size);
+  cudaMalloc((void**) &imageOut, PPMimage_size);
+  cudaMalloc((void**) &imageOut.data, PPMdata_size);
 
-	// save the medium case
-	performNewIdeaFinalization(imageSmall,  imageBig, imageOut);
-	if(argc > 1) {
-		writePPM("flower_medium.ppm", imageOut);
-	} else {
-		writeStreamPPM(stdout, imageOut);
-	}
-	
-	// free all memory structures
-	freeImage(imageUnchanged);
-	freeImage(imageBuffer);
-	freeImage(imageSmall);
-	freeImage(imageBig);
-	free(imageOut->data);
-	free(imageOut);
-	free(image->data);
-	free(image);
-	
+  convertImageToNewFormatGPU<<<numBlocks, numThreads>>>(imageUnchanged, image);
+
+  fiveIterationsGPU<<<numBlocks, numThreads>>>(imageSmall, imageUnchanged, imageBuffer, 2);
+  fiveIterationsGPU<<<numBlocks, numThreads>>>(imageBig, imageUnchanged, imageBuffer, 3);
+  performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(imageSmall, imageBig, imageOut);
+  cudaMemcpy(image, imageOut, PPMimage_size, cudaMemcpyDeviceToHost);
+  if(argc > 1) {
+    writePPM("flower_medium.ppm", image);
+  } else {
+    writeStreamPPM(stdout, image);
+  }
+
+  fiveIterationsGPU<<<numBlocks, numThreads>>>(imageSmall, imageUnchanged, imageBuffer, 5);
+  performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(imageBig, imageSmall, imageOut);
+  cudaMemcpy(image, imageOut, PPMimage_size, cudaMemcpyDeviceToHost);
+  if(argc > 1) {
+    writePPM("flower_medium.ppm", image);
+  } else {
+    writeStreamPPM(stdout, image);
+  }
+
+  fiveIterationsGPU<<<numBlocks, numThreads>>>(imageBig, imageUnchanged, imageBuffer, 8);
+  performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(imageSmall, imageBig, imageOut);
+  cudaMemcpy(image, imageOut, PPMimage_size, cudaMemcpyDeviceToHost);
+  if(argc > 1) {
+    writePPM("flower_medium.ppm", image);
+  } else {
+    writeStreamPPM(stdout, image);
+  }
+
+  cudaFree(imageUnchanged);
+  cudaFree(imageBuffer);
+  cudaFree(imageSmall);
+  cudaFree(imageBig);
+  cudaFree(imageOut);
+  cudaFree(imageUnchanged->data);
+  cudaFree(imageBuffer->data);
+  cudaFree(imageSmall->data);
+  cudaFree(imageBig->data);
+  cudaFree(imageOut->data);
+  free(image->data);
+  free(image);
 	return 0;
 }
-

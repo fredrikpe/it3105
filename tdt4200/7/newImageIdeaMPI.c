@@ -162,63 +162,44 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
 	free(line_buffer);
 }
 
+int getValue(float value)
+{
+	if(value > 255)
+		return 255;
+	else if (value < -1.0) {
+		value += 257;
+		if(value > 255)
+			return 255;
+	} else if (value > -1.0 && value < 0.0)
+		return 0;
+	return (int) value;
+}
+
 // Perform the final step, and save it as a ppm in imageOut
-void performNewIdeaFinalization(AccurateImage *imageInSmall, AccurateImage *imageInLarge, PPMImage *imageOut) {
-
-
+void performNewIdeaFinalization(AccurateImage *imageInSmall, AccurateImage *imageInLarge, PPMImage *imageOut)
+{
 	imageOut->x = imageInSmall->x;
 	imageOut->y = imageInSmall->y;
 
-	for(int i = 0; i < imageInSmall->x * imageInSmall->y; i++) {
-		float value = (imageInLarge->data[i].red - imageInSmall->data[i].red);
-
-		if(value > 255.0f)
-			imageOut->data[i].red = 255;
-		else if (value < -1.0f) {
-			value = 257.0f+value;
-			if(value > 255.0f)
-				imageOut->data[i].red = 255;
-			else
-				imageOut->data[i].red = floorf(value);
-		} else if (value > -1.0f && value < 0.0f) {
-			imageOut->data[i].red = 0;
-		}  else {
-			imageOut->data[i].red = floorf(value);
-		}
-
-		value = (imageInLarge->data[i].green - imageInSmall->data[i].green);
-		if(value > 255.0f)
-			imageOut->data[i].green = 255;
-		else if (value < -1.0f) {
-			value = 257.0f+value;
-			if(value > 255.0f)
-				imageOut->data[i].green = 255;
-			else
-				imageOut->data[i].green = floorf(value);
-		} else if (value > -1.0f && value < 0.0f) {
-			imageOut->data[i].green = 0.0f;
-		} else {
-			imageOut->data[i].green = floorf(value);
-		}
-
-		value = (imageInLarge->data[i].blue - imageInSmall->data[i].blue);
-		if(value > 255.0f)
-			imageOut->data[i].blue = 255;
-		else if (value < -1.0f) {
-			value = 257.0f+value;
-			if(value > 255.0f)
-				imageOut->data[i].blue = 255;
-			else
-				imageOut->data[i].blue = floorf(value);
-		} else if (value > -1.0f && value < 0.0f) {
-			imageOut->data[i].blue = 0;
-		} else {
-			imageOut->data[i].blue = floorf(value);
-		}
+	for(int i=0; i<imageInSmall->x * imageInSmall->y; i+=1)
+	{
+		float value = imageInLarge->data[i].red - imageInSmall->data[i].red;
+		imageOut->data[i].red = getValue(value);
+		value = imageInLarge->data[i].green - imageInSmall->data[i].green;
+		imageOut->data[i].green = getValue(value);
+		value = imageInLarge->data[i].blue - imageInSmall->data[i].blue;
+		imageOut->data[i].blue = getValue(value);
 	}
-
 }
 
+void fiveIterations(AccurateImage *imageNew, AccurateImage *imageUnchanged, AccurateImage *imageBuffer, int size)
+{
+	performNewIdeaIteration(imageNew, imageUnchanged, size);
+	performNewIdeaIteration(imageBuffer, imageNew, size);
+	performNewIdeaIteration(imageNew, imageBuffer, size);
+	performNewIdeaIteration(imageBuffer, imageNew, size);
+	performNewIdeaIteration(imageNew, imageBuffer, size);
+}
 
 int main(int argc, char** argv) {
 
@@ -226,70 +207,99 @@ int main(int argc, char** argv) {
 	// Process the four cases in parallel
 	// Exchanging image buffers gives quite big messages
 	// Use asynchronous MPI to post the receives ahead of the sends
-	int myid, numprocs;
-	int tag,source,destination,count;
-	int buffer;
-
-	MPI_Init(&argc,&argv);
-	MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
-	MPI_Comm_rank(MPI_COMM_WORLD,&myid);
-		MPI_Send(&buffer,count,MPI_INT,destination,tag,MPI_COMM_WORLD);
-		MPI_Recv(&buffer,count,MPI_INT,source,tag,MPI_COMM_WORLD,&status);
-
+	int rank;
+	int size = 4;
+	MPI_Request request;
+	MPI_Status status;
 	PPMImage *image;
+
 
 	// The MPI version will always read from file
 	image = readPPM("flower.ppm");
+
+	MPI_Init(&argc,&argv);
+	MPI_Comm_size(MPI_COMM_WORLD,&size);
+	MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+
+
+	/* create a type for struct AccuratePixel */
+	const int nitems=3;
+	int blocklengths[3] = {1,1,1};
+	MPI_Datatype types[3] = {MPI_FLOAT, MPI_FLOAT, MPI_FLOAT};
+	MPI_Datatype mpi_pixel_type;
+	MPI_Aint offsets[3];
+
+	offsets[0] = offsetof(AccuratePixel, red);
+	offsets[1] = offsetof(AccuratePixel, green);
+	offsets[1] = offsetof(AccuratePixel, blue);
+
+	MPI_Type_create_struct(nitems, blocklengths, offsets, types, &mpi_pixel_type);
+	MPI_Type_commit(&mpi_pixel_type);
+
+	/* create a type for struct AccurateImage */
+	int blocklengths2[3] = {1,1,image->x*image->y};
+	MPI_Datatype types2[3] = {MPI_INT, MPI_INT, mpi_pixel_type};
+	MPI_Datatype mpi_image_type;
+
+	offsets[0] = offsetof(AccurateImage, x);
+	offsets[1] = offsetof(AccurateImage, y);
+	offsets[1] = offsetof(AccurateImage, data);
+
+	MPI_Type_create_struct(nitems, blocklengths2, offsets, types2, &mpi_image_type);
+	MPI_Type_commit(&mpi_image_type);
 
 	AccurateImage *imageUnchanged = convertImageToNewFormat(image); // save the unchanged image from input image
 	AccurateImage *imageBuffer = createEmptyImage(image);
 	AccurateImage *imageSmall = createEmptyImage(image);
 	AccurateImage *imageBig = createEmptyImage(image);
 
+
 	PPMImage *imageOut;
 	imageOut = (PPMImage *)malloc(sizeof(PPMImage));
 	imageOut->data = (PPMPixel*)malloc(image->x * image->y * sizeof(PPMPixel));
 
+
 	// Process the tiny case:
-	performNewIdeaIteration(imageSmall, imageUnchanged, 2);
-	performNewIdeaIteration(imageBuffer, imageSmall, 2);
-	performNewIdeaIteration(imageSmall, imageBuffer, 2);
-	performNewIdeaIteration(imageBuffer, imageSmall, 2);
-	performNewIdeaIteration(imageSmall, imageBuffer, 2);
+	if (rank == 0)
+	{
+		fiveIterations(imageSmall, imageUnchanged, imageBuffer, 2);
+		MPI_Isend(imageSmall, 1, mpi_image_type, 1, 9, MPI_COMM_WORLD, &request);
+	}
 
 	// Process the small case:
-	performNewIdeaIteration(imageBig, imageUnchanged,3);
-	performNewIdeaIteration(imageBuffer, imageBig,3);
-	performNewIdeaIteration(imageBig, imageBuffer,3);
-	performNewIdeaIteration(imageBuffer, imageBig,3);
-	performNewIdeaIteration(imageBig, imageBuffer,3);
-
-	// save tiny case result
-	performNewIdeaFinalization(imageSmall,  imageBig, imageOut);
-	writePPM("flower_tiny.ppm", imageOut);
-
+	if (rank == 1)
+	{
+		fiveIterations(imageBig, imageUnchanged, imageBuffer, 3);
+		// send to 2
+		MPI_Isend(imageBig, 1, mpi_image_type, 2, 9, MPI_COMM_WORLD, &request);
+		// recv from 0
+		MPI_Recv(imageSmall, 1, mpi_image_type, 0, 9, MPI_COMM_WORLD, &status);
+		performNewIdeaFinalization(imageSmall,  imageBig, imageOut);
+		writePPM("flower_tiny.ppm", imageOut);
+	}
 
 	// Process the medium case:
-	performNewIdeaIteration(imageSmall, imageUnchanged, 5);
-	performNewIdeaIteration(imageBuffer, imageSmall, 5);
-	performNewIdeaIteration(imageSmall, imageBuffer, 5);
-	performNewIdeaIteration(imageBuffer, imageSmall, 5);
-	performNewIdeaIteration(imageSmall, imageBuffer, 5);
-
-	// save small case
-	performNewIdeaFinalization(imageBig,  imageSmall,imageOut);
-	writePPM("flower_small.ppm", imageOut);
+	if (rank == 2)
+	{
+		fiveIterations(imageSmall, imageUnchanged, imageBuffer, 5);
+		// send to 3
+		MPI_Isend(imageSmall, 1, mpi_image_type, 3, 9, MPI_COMM_WORLD, &request);
+		// recv from 1
+		MPI_Recv(imageBig, 1, mpi_image_type, 1, 9, MPI_COMM_WORLD, &status);
+		performNewIdeaFinalization(imageBig,  imageSmall,imageOut);
+		writePPM("flower_small.ppm", imageOut);
+	}
 
 	// process the large case
-	performNewIdeaIteration(imageBig, imageUnchanged, 8);
-	performNewIdeaIteration(imageBuffer, imageBig, 8);
-	performNewIdeaIteration(imageBig, imageBuffer, 8);
-	performNewIdeaIteration(imageBuffer, imageBig, 8);
-	performNewIdeaIteration(imageBig, imageBuffer, 8);
-
-	// save the medium case
-	performNewIdeaFinalization(imageSmall,  imageBig, imageOut);
-	writePPM("flower_medium.ppm", imageOut);
+	if (rank == 3)
+	{
+		fiveIterations(imageBig, imageUnchanged, imageBuffer, 8);
+		// save the medium case
+		// recv from 2
+		MPI_Recv(imageSmall, 1, mpi_image_type, 2, 9, MPI_COMM_WORLD, &status);
+		performNewIdeaFinalization(imageSmall,  imageBig, imageOut);
+		writePPM("flower_medium.ppm", imageOut);
+	}
 
 	// free all memory structures
 	freeImage(imageUnchanged);
@@ -300,6 +310,8 @@ int main(int argc, char** argv) {
 	free(imageOut);
 	free(image->data);
 	free(image);
+
+	MPI_Finalize();
 
 	return 0;
 }
