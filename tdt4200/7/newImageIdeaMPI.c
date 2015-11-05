@@ -210,6 +210,9 @@ int main(int argc, char** argv) {
 	int rank;
 	int size = 4;
 	MPI_Request request;
+	MPI_Request r0;
+	MPI_Request r1;
+	MPI_Request r2;
 	MPI_Status status;
 	PPMImage *image;
 
@@ -221,85 +224,76 @@ int main(int argc, char** argv) {
 	MPI_Comm_size(MPI_COMM_WORLD,&size);
 	MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
-
-	/* create a type for struct AccuratePixel */
-	const int nitems=3;
-	int blocklengths[3] = {1,1,1};
-	MPI_Datatype types[3] = {MPI_FLOAT, MPI_FLOAT, MPI_FLOAT};
-	MPI_Datatype mpi_pixel_type;
-	MPI_Aint offsets[3];
-
-	offsets[0] = offsetof(AccuratePixel, red);
-	offsets[1] = offsetof(AccuratePixel, green);
-	offsets[1] = offsetof(AccuratePixel, blue);
-
-	MPI_Type_create_struct(nitems, blocklengths, offsets, types, &mpi_pixel_type);
-	MPI_Type_commit(&mpi_pixel_type);
-
-	/* create a type for struct AccurateImage */
-	int blocklengths2[3] = {1,1,image->x*image->y};
-	MPI_Datatype types2[3] = {MPI_INT, MPI_INT, mpi_pixel_type};
-	MPI_Datatype mpi_image_type;
-
-	offsets[0] = offsetof(AccurateImage, x);
-	offsets[1] = offsetof(AccurateImage, y);
-	offsets[1] = offsetof(AccurateImage, data);
-
-	MPI_Type_create_struct(nitems, blocklengths2, offsets, types2, &mpi_image_type);
-	MPI_Type_commit(&mpi_image_type);
-
+	int W = image->x;
+	int H = image->y;
+	
 	AccurateImage *imageUnchanged = convertImageToNewFormat(image); // save the unchanged image from input image
 	AccurateImage *imageBuffer = createEmptyImage(image);
 	AccurateImage *imageSmall = createEmptyImage(image);
 	AccurateImage *imageBig = createEmptyImage(image);
-
-
+	
+	
 	PPMImage *imageOut;
 	imageOut = (PPMImage *)malloc(sizeof(PPMImage));
-	imageOut->data = (PPMPixel*)malloc(image->x * image->y * sizeof(PPMPixel));
-
-
+	imageOut->data = (PPMPixel*)malloc(W * H * sizeof(PPMPixel));
+	
+	
 	// Process the tiny case:
 	if (rank == 0)
 	{
 		fiveIterations(imageSmall, imageUnchanged, imageBuffer, 2);
-		MPI_Isend(imageSmall, 1, mpi_image_type, 1, 9, MPI_COMM_WORLD, &request);
+		// Send to rank 1
+		MPI_Isend(imageSmall->data, W*H*3, MPI_FLOAT, 1, 9, MPI_COMM_WORLD, &request);
 	}
-
+	
 	// Process the small case:
 	if (rank == 1)
 	{
+		// Recv from rank 0
+		MPI_Irecv(imageSmall->data, W*H*3, MPI_FLOAT, 0, 9, MPI_COMM_WORLD, &r0);
+		
 		fiveIterations(imageBig, imageUnchanged, imageBuffer, 3);
-		// send to 2
-		MPI_Isend(imageBig, 1, mpi_image_type, 2, 9, MPI_COMM_WORLD, &request);
-		// recv from 0
-		MPI_Recv(imageSmall, 1, mpi_image_type, 0, 9, MPI_COMM_WORLD, &status);
+		// Send to rank 2
+		MPI_Isend(imageBig->data, W*H*3, MPI_FLOAT, 2, 9, MPI_COMM_WORLD, &request);
+
+		MPI_Wait(&r0,&status);	
 		performNewIdeaFinalization(imageSmall,  imageBig, imageOut);
 		writePPM("flower_tiny.ppm", imageOut);
-	}
 
+		
+	}
+	
 	// Process the medium case:
 	if (rank == 2)
 	{
+		// Recv from rank 1
+		MPI_Irecv(imageBig->data, W*H*3, MPI_FLOAT, 1, 9, MPI_COMM_WORLD, &r1);	
+
 		fiveIterations(imageSmall, imageUnchanged, imageBuffer, 5);
-		// send to 3
-		MPI_Isend(imageSmall, 1, mpi_image_type, 3, 9, MPI_COMM_WORLD, &request);
-		// recv from 1
-		MPI_Recv(imageBig, 1, mpi_image_type, 1, 9, MPI_COMM_WORLD, &status);
+		// Send to rank 3
+		MPI_Isend(imageSmall->data, W*H*3, MPI_FLOAT, 3, 9, MPI_COMM_WORLD, &request);
+			
+		MPI_Wait(&r1,&status);
 		performNewIdeaFinalization(imageBig,  imageSmall,imageOut);
 		writePPM("flower_small.ppm", imageOut);
+		
 	}
 
 	// process the large case
 	if (rank == 3)
 	{
+		// Recv from rank 2
+		MPI_Irecv(imageSmall->data, W*H*3, MPI_FLOAT, 2, 9, MPI_COMM_WORLD, &r2);
+		
 		fiveIterations(imageBig, imageUnchanged, imageBuffer, 8);
-		// save the medium case
-		// recv from 2
-		MPI_Recv(imageSmall, 1, mpi_image_type, 2, 9, MPI_COMM_WORLD, &status);
+			
+		MPI_Wait(&r2,&status);		
 		performNewIdeaFinalization(imageSmall,  imageBig, imageOut);
 		writePPM("flower_medium.ppm", imageOut);
 	}
+
+	
+	MPI_Barrier(MPI_COMM_WORLD); 
 
 	// free all memory structures
 	freeImage(imageUnchanged);

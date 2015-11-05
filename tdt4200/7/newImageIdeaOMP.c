@@ -52,7 +52,7 @@ void freeImage(AccurateImage *image){
 }
 
 void bar(int senterY, int size, AccuratePixel *line_buffer, AccurateImage* imageIn,
-          AccurateImage *imageOut)
+          AccurateImage *imageOut, float rec)
 {
 
   float sum_red = 0;
@@ -119,24 +119,22 @@ void bar(int senterY, int size, AccuratePixel *line_buffer, AccurateImage* image
       sum_red +=line_buffer[endx].red;
       sum_green +=line_buffer[endx].green;
       sum_blue +=line_buffer[endx].blue;
+      rec = 1.0/((endx+1)*(endy-starty+1));
     }else if (endx >= W){
       endx = W-1;
       sum_red -=line_buffer[startx-1].red;
       sum_green -=line_buffer[startx-1].green;
       sum_blue -=line_buffer[startx-1].blue;
-
+      rec = 1.0/ ((W-startx)*(endy-starty+1));
     }else{
       sum_red += (line_buffer[endx].red-line_buffer[startx-1].red);
       sum_green += (line_buffer[endx].green-line_buffer[startx-1].green);
       sum_blue += (line_buffer[endx].blue-line_buffer[startx-1].blue);
     }
-
-    // we save each pixel in the output image
-    float count_rec=1.0 / ((endx-startx+1)*(endy-starty+1));
-
-    imageOut->data[senterY*W + senterX].red = sum_red*count_rec;
-    imageOut->data[senterY*W + senterX].green = sum_green*count_rec;
-    imageOut->data[senterY*W + senterX].blue = sum_blue*count_rec;
+    
+    imageOut->data[senterY*W + senterX].red = sum_red * rec;
+    imageOut->data[senterY*W + senterX].green = sum_green * rec;
+    imageOut->data[senterY*W + senterX].blue = sum_blue * rec;
   }
 }
 
@@ -151,6 +149,8 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
   int W = imageIn->x;
   int H = imageIn->y;
 
+  float rec = 1.0 / (2*size + 1);
+
   // line buffer that will save the sum of some pixel in the column
   AccuratePixel *line_buffer = (AccuratePixel*) malloc(W*sizeof(AccuratePixel));
   memset(line_buffer,0,W*sizeof(AccuratePixel));
@@ -163,9 +163,8 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
 
   int each = H/4;
   // Iterate over each line of pixelx.
-  #pragma omp parallel for num_threads(4)
+  #pragma omp parallel for num_threads(4) //schedule(static, 1)
   for(int senterY = 0; senterY < H; senterY++) {
-    // first and last line considered  by the computation of the pixel in the line senterY
     if (omp_get_thread_num() == 0) {
       if (senterY == 0) {
         for(int y=0; y < size; y++) {
@@ -176,9 +175,8 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
           }
         }
       }
-      bar(senterY, size, line_buffer, imageIn, imageOut);
+      bar(senterY, size, line_buffer, imageIn, imageOut, rec);
     } else if (omp_get_thread_num() == 1) {
-      //printf("%d, ", senterY);
       if (senterY == each) {
         for(int y=senterY-size-1; y < senterY+size; y++) {
           for(int i=0; i<W; i++){
@@ -188,7 +186,7 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
           }
         }
       }
-      bar(senterY, size, line_buffer1, imageIn, imageOut);
+      bar(senterY, size, line_buffer1, imageIn, imageOut, rec);
     } else if (omp_get_thread_num() == 2) {
       if (senterY == 2*each) {
         for(int y=senterY-size-1; y < senterY+size; y++) {
@@ -199,7 +197,7 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
           }
         }
       }
-      bar(senterY, size, line_buffer2, imageIn, imageOut);
+      bar(senterY, size, line_buffer2, imageIn, imageOut, rec);
     } else {
       if (senterY == 3*each) {
         for(int y=senterY-size-1; y < senterY+size; y++) {
@@ -210,26 +208,15 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
           }
         }
       }
-      bar(senterY, size, line_buffer3, imageIn, imageOut);
+      bar(senterY, size, line_buffer3, imageIn, imageOut, rec);
     }
   }
 
   // free memory
   free(line_buffer);
-}
-
-int getValue(float value)
-{
-  if(value > 255) {
-    return 255;
-  } else if (value < -1.0) {
-    value += 257;
-    if(value > 255)
-      return 255;
-  } else if (value > -1.0 && value < 0.0) {
-    return 0;
-  }
-  return (int) value;
+  free(line_buffer1);
+  free(line_buffer2);
+  free(line_buffer3);
 }
 
     // Perform the final step, and save it as a ppm in imageOut
@@ -241,11 +228,11 @@ void performNewIdeaFinalization(AccurateImage *imageInSmall, AccurateImage *imag
   for(int i=0; i<imageInSmall->x * imageInSmall->y; i+=1)
   {
     float value = imageInLarge->data[i].red - imageInSmall->data[i].red;
-    imageOut->data[i].red = getValue(value);
+    imageOut->data[i].red = (int)value;
     value = imageInLarge->data[i].green - imageInSmall->data[i].green;
-    imageOut->data[i].green = getValue(value);
+    imageOut->data[i].green = (int)value;
     value = imageInLarge->data[i].blue - imageInSmall->data[i].blue;
-    imageOut->data[i].blue = getValue(value);
+    imageOut->data[i].blue = (int)value;
   }
 }
 

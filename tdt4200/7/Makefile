@@ -2,7 +2,7 @@
 
 all: newImageIdeaOMP newImageIdeaMPI newImageIdeaGPU newImageIdeaReference
 
-CUDAFLAGS:=--compiler-bindir gcc
+CUDAFLAGS:=--compiler-bindir gcc-4.8 -lm
 
 ppm.o: ppm.c
 	gcc -O2 -march=native --std=c99 $< -o $@ -c
@@ -17,7 +17,7 @@ newImageIdeaOMP: newImageIdeaOMP.c ppm.c
 	gcc -O2 -march=native -fopenmp --std=c99 -o $@ $^ -lm
 	
 newImageIdeaMPI: newImageIdeaMPI.c ppm.c
-	mpicc -O2 -march=native --std=c99 -o $@ $^ -lm
+	mpicc -O2 -g -Wall -Wextra -pedantic -march=native --std=c99 -o $@ $^ -lm
 	
 newImageIdeaDebugOMP: newImageIdeaOMP.c ppm.c
 	gcc -O1 -Wall -g -fno-inline -march=native -fopenmp --std=c99 -o $@ $^ -lm
