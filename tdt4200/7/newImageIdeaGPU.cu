@@ -18,7 +18,7 @@ typedef struct {
 
 // Convert a PPM image to a high-precision format
 AccurateImage * convertImageToNewFormat(PPMImage *image) {
-  
+
   AccurateImage *a = (AccurateImage*)malloc(sizeof(AccurateImage));
   a->data = (AccuratePixel*)malloc(image->x*image->y*sizeof(AccuratePixel));
   for(int i = 0; i < image->x*image->y; i++)
@@ -66,8 +66,8 @@ void freeImage(AccurateImage *image){
 }
 
 __global__ void performNewIdeaIterationGPU(float *imageOut, float *imageIn, int size, int W, int H) {
- 
-  
+
+
   // This assumes that (channels * width * height) is divisible by (number of blocks)
   int pixels_per_column = (W*H) / gridDim.x;
 
@@ -187,22 +187,22 @@ int main(int argc, char** argv) {
   // Allocate memory on the GPU
   cudaMalloc((void**) &deviceUnchanged, data_size);
   cudaMemcpy(deviceUnchanged, imageUnchanged->data, data_size, cudaMemcpyHostToDevice);
-  
+
   cudaMalloc((void**) &deviceBuffer, data_size);
   cudaMemcpy(deviceBuffer, imageDummy->data, data_size, cudaMemcpyHostToDevice);
-    
+
   cudaMalloc((void**) &deviceSmall, data_size);
   cudaMemcpy(deviceSmall, imageDummy->data, data_size, cudaMemcpyHostToDevice);
-  
+
   cudaMalloc((void**) &deviceBig, data_size);
   cudaMemcpy(deviceBig, imageDummy->data, data_size, cudaMemcpyHostToDevice);
 
   cudaMalloc((void**) &deviceOut, PPMdata_size);
   cudaMemcpy(deviceOut, imageDummy->data, PPMdata_size, cudaMemcpyHostToDevice);
-  
+
 
   // Do iterations
-  
+
 
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceSmall, deviceUnchanged, 2, W, H);
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceBuffer, deviceSmall, 2, W, H);
@@ -215,8 +215,8 @@ int main(int argc, char** argv) {
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceBig, deviceBuffer, 3, W, H);
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceBuffer, deviceBig, 3, W, H);
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceBig, deviceBuffer, 3, W, H);
- 
- 
+
+
   performNewIdeaFinalizationGPU<<<numBlocks, numThreads>>>(deviceSmall, deviceBig, deviceOut);
   cudaMemcpy(image->data, deviceOut, PPMdata_size, cudaMemcpyDeviceToHost);
   if(argc > 1) {
@@ -245,7 +245,7 @@ int main(int argc, char** argv) {
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceBig, deviceBuffer, 8, W, H);
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceBuffer, deviceBig, 8, W, H);
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceBig, deviceBuffer, 8, W, H);
-  
+
   performNewIdeaFinalizationGPU<<<numBlocks, numThreads>>>(deviceSmall, deviceBig, deviceOut);
   //cudaMemcpy(image, deviceOut, PPMimage_size, cudaMemcpyDeviceToHost);
   cudaMemcpy(image->data, deviceOut, PPMdata_size, cudaMemcpyDeviceToHost);

@@ -51,121 +51,25 @@ void freeImage(AccurateImage *image){
   free(image);
 }
 
-void bar(int senterY, int size, AccuratePixel *line_buffer, AccurateImage* imageIn,
-          AccurateImage *imageOut, float rec)
-{
-
-  float sum_red = 0;
-  float sum_blue = 0;
-  float sum_green =0;
-  int W = imageIn->x;
-  int H = imageIn->y;
-
-  int starty = senterY-size;
-  int endy = senterY+size;
-
-
-  // Initialize and update the line_buffer.
-  // For OpenMP this might cause problems
-  // Separating out the initialization part might help
-  if (starty <=0) {
-    starty = 0;
-    for(int i=0; i<W; i++){
-      // add the next pixel of the next line in the column x
-      line_buffer[i].blue+=imageIn->data[W*endy+i].blue;
-      line_buffer[i].red+=imageIn->data[W*endy+i].red;
-      line_buffer[i].green+=imageIn->data[W*endy+i].green;
-    }
-  }
-
-  else if (endy >= H ){
-    // for the last lines, we just need to subtract the first added line
-    endy = H-1;
-    for(int i=0; i<W; i++){
-      line_buffer[i].blue-=imageIn->data[W*(starty-1)+i].blue;
-      line_buffer[i].red-=imageIn->data[W*(starty-1)+i].red;
-      line_buffer[i].green-=imageIn->data[W*(starty-1)+i].green;
-    }
-  }else{
-    // general case
-    // add the next line and remove the first added line
-    for(int i=0; i<W; i++){
-      line_buffer[i].blue+=imageIn->data[W*endy+i].blue-imageIn->data[W*(starty-1)+i].blue;
-      line_buffer[i].red+=imageIn->data[W*endy+i].red-imageIn->data[W*(starty-1)+i].red;
-      line_buffer[i].green+=imageIn->data[W*endy+i].green-imageIn->data[W*(starty-1)+i].green;
-    }
-  }
-  // End of line_buffer initialisation.
-
-
-  sum_green =0;
-  sum_red = 0;
-  sum_blue = 0;
-  for(int senterX = 0; senterX < W; senterX++) {
-    // in this loop, we do exactly the same thing as before but only with the array line_buffer
-
-    int startx = senterX-size;
-    int endx = senterX+size;
-
-    if (startx <=0){
-      startx = 0;
-      if(senterX==0){
-        for (int x=startx; x < endx; x++){
-          sum_red += line_buffer[x].red;
-          sum_green += line_buffer[x].green;
-          sum_blue += line_buffer[x].blue;
-        }
-      }
-      sum_red +=line_buffer[endx].red;
-      sum_green +=line_buffer[endx].green;
-      sum_blue +=line_buffer[endx].blue;
-      rec = 1.0/((endx+1)*(endy-starty+1));
-    }else if (endx >= W){
-      endx = W-1;
-      sum_red -=line_buffer[startx-1].red;
-      sum_green -=line_buffer[startx-1].green;
-      sum_blue -=line_buffer[startx-1].blue;
-      rec = 1.0/ ((W-startx)*(endy-starty+1));
-    }else{
-      sum_red += (line_buffer[endx].red-line_buffer[startx-1].red);
-      sum_green += (line_buffer[endx].green-line_buffer[startx-1].green);
-      sum_blue += (line_buffer[endx].blue-line_buffer[startx-1].blue);
-    }
-    
-    imageOut->data[senterY*W + senterX].red = sum_red * rec;
-    imageOut->data[senterY*W + senterX].green = sum_green * rec;
-    imageOut->data[senterY*W + senterX].blue = sum_blue * rec;
-  }
-}
-
-
-// Perform the new idea:
-// The code in this function should run in parallel
-// Try to find a good strategy for dividing the problem into individual parts.
-// Using OpenMP inside this function itself might be avoided
-// You may be able to do this only with a single OpenMP directive
 void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int size) {
 
   int W = imageIn->x;
   int H = imageIn->y;
-
-  float rec = 1.0 / (2*size + 1);
-
-  // line buffer that will save the sum of some pixel in the column
-  AccuratePixel *line_buffer = (AccuratePixel*) malloc(W*sizeof(AccuratePixel));
-  memset(line_buffer,0,W*sizeof(AccuratePixel));
-  AccuratePixel *line_buffer1 = (AccuratePixel*) malloc(W*sizeof(AccuratePixel));
-  memset(line_buffer1,0,W*sizeof(AccuratePixel));
-  AccuratePixel *line_buffer2 = (AccuratePixel*) malloc(W*sizeof(AccuratePixel));
-  memset(line_buffer2,0,W*sizeof(AccuratePixel));
-  AccuratePixel *line_buffer3 = (AccuratePixel*) malloc(W*sizeof(AccuratePixel));
-  memset(line_buffer3,0,W*sizeof(AccuratePixel));
-
   int each = H/4;
-  // Iterate over each line of pixelx.
-  #pragma omp parallel for num_threads(4) //schedule(static, 1)
-  for(int senterY = 0; senterY < H; senterY++) {
-    if (omp_get_thread_num() == 0) {
+
+  #pragma omp parallel num_threads(4)
+  {
+    AccuratePixel *line_buffer = (AccuratePixel*) malloc(W*sizeof(AccuratePixel));
+    memset(line_buffer,0,W*sizeof(AccuratePixel));
+
+    float sum_red;
+    float sum_blue;
+    float sum_green;
+    float rec = 1.0 / (2*size + 1);
+
+
+    #pragma omp for
+    for(int senterY = 0; senterY < H; senterY++) {
       if (senterY == 0) {
         for(int y=0; y < size; y++) {
           for(int i=0; i<W; i++){
@@ -175,48 +79,90 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
           }
         }
       }
-      bar(senterY, size, line_buffer, imageIn, imageOut, rec);
-    } else if (omp_get_thread_num() == 1) {
-      if (senterY == each) {
+      if (senterY == each || senterY == 2*each || senterY == 3*each) {
         for(int y=senterY-size-1; y < senterY+size; y++) {
           for(int i=0; i<W; i++){
-            line_buffer1[i].blue+=imageIn->data[W*y+i].blue;
-            line_buffer1[i].red+=imageIn->data[W*y+i].red;
-            line_buffer1[i].green+=imageIn->data[W*y+i].green;
+            line_buffer[i].blue+=imageIn->data[W*y+i].blue;
+            line_buffer[i].red+=imageIn->data[W*y+i].red;
+            line_buffer[i].green+=imageIn->data[W*y+i].green;
           }
         }
       }
-      bar(senterY, size, line_buffer1, imageIn, imageOut, rec);
-    } else if (omp_get_thread_num() == 2) {
-      if (senterY == 2*each) {
-        for(int y=senterY-size-1; y < senterY+size; y++) {
-          for(int i=0; i<W; i++){
-            line_buffer2[i].blue+=imageIn->data[W*y+i].blue;
-            line_buffer2[i].red+=imageIn->data[W*y+i].red;
-            line_buffer2[i].green+=imageIn->data[W*y+i].green;
-          }
-        }
-      }
-      bar(senterY, size, line_buffer2, imageIn, imageOut, rec);
-    } else {
-      if (senterY == 3*each) {
-        for(int y=senterY-size-1; y < senterY+size; y++) {
-          for(int i=0; i<W; i++){
-            line_buffer3[i].blue+=imageIn->data[W*y+i].blue;
-            line_buffer3[i].red+=imageIn->data[W*y+i].red;
-            line_buffer3[i].green+=imageIn->data[W*y+i].green;
-          }
-        }
-      }
-      bar(senterY, size, line_buffer3, imageIn, imageOut, rec);
-    }
-  }
 
-  // free memory
-  free(line_buffer);
-  free(line_buffer1);
-  free(line_buffer2);
-  free(line_buffer3);
+      int starty = senterY-size;
+      int endy = senterY+size;
+
+      if (starty <=0) {
+        starty = 0;
+        for(int i=0; i<W; i++){
+          // add the next pixel of the next line in the column x
+          line_buffer[i].blue+=imageIn->data[W*endy+i].blue;
+          line_buffer[i].red+=imageIn->data[W*endy+i].red;
+          line_buffer[i].green+=imageIn->data[W*endy+i].green;
+        }
+      }
+
+      else if (endy >= H ){
+        // for the last lines, we just need to subtract the first added line
+        endy = H-1;
+        for(int i=0; i<W; i++){
+          line_buffer[i].blue-=imageIn->data[W*(starty-1)+i].blue;
+          line_buffer[i].red-=imageIn->data[W*(starty-1)+i].red;
+          line_buffer[i].green-=imageIn->data[W*(starty-1)+i].green;
+        }
+      }else{
+        // general case
+        // add the next line and remove the first added line
+        for(int i=0; i<W; i++){
+          line_buffer[i].blue+=imageIn->data[W*endy+i].blue-imageIn->data[W*(starty-1)+i].blue;
+          line_buffer[i].red+=imageIn->data[W*endy+i].red-imageIn->data[W*(starty-1)+i].red;
+          line_buffer[i].green+=imageIn->data[W*endy+i].green-imageIn->data[W*(starty-1)+i].green;
+        }
+      }
+      // End of line_buffer initialisation.
+
+
+      sum_green =0;
+      sum_red = 0;
+      sum_blue = 0;
+      for(int senterX = 0; senterX < W; senterX++) {
+        // in this loop, we do exactly the same thing as before but only with the array line_buffer
+
+        int startx = senterX-size;
+        int endx = senterX+size;
+
+        if (startx <=0){
+          startx = 0;
+          if(senterX==0){
+            for (int x=startx; x < endx; x++){
+              sum_red += line_buffer[x].red;
+              sum_green += line_buffer[x].green;
+              sum_blue += line_buffer[x].blue;
+            }
+          }
+          sum_red +=line_buffer[endx].red;
+          sum_green +=line_buffer[endx].green;
+          sum_blue +=line_buffer[endx].blue;
+          rec = 1.0/((endx+1)*(endy-starty+1));
+        }else if (endx >= W){
+          endx = W-1;
+          sum_red -=line_buffer[startx-1].red;
+          sum_green -=line_buffer[startx-1].green;
+          sum_blue -=line_buffer[startx-1].blue;
+          rec = 1.0/ ((W-startx)*(endy-starty+1));
+        }else{
+          sum_red += (line_buffer[endx].red-line_buffer[startx-1].red);
+          sum_green += (line_buffer[endx].green-line_buffer[startx-1].green);
+          sum_blue += (line_buffer[endx].blue-line_buffer[startx-1].blue);
+        }
+
+        imageOut->data[senterY*W + senterX].red = sum_red * rec;
+        imageOut->data[senterY*W + senterX].green = sum_green * rec;
+        imageOut->data[senterY*W + senterX].blue = sum_blue * rec;
+      }
+    }
+    free(line_buffer);
+  }
 }
 
     // Perform the final step, and save it as a ppm in imageOut
