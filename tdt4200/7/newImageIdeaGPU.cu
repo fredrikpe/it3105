@@ -156,7 +156,7 @@ int main(int argc, char** argv) {
   );
 
   size_t data_size = 3*W*H*sizeof(float);
-  size_t PPMdata_size = sizeof(unsigned char) * W * H * 3;
+  size_t PPMdata_size = 3*W*H*sizeof(unsigned char);
 
   float *deviceUnchanged;
   float *deviceBuffer;
