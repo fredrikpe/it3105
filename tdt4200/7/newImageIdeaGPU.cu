@@ -16,19 +16,18 @@ typedef struct {
      AccuratePixel *data;
 } AccurateImage;
 
-__global__ void convertImageToNewFormatGPU(float* imageUnchanged, unsigned char* image, int W, int H)
-{
+__global__ void convertImageToNewFormatGPU(float* imageUnchanged, unsigned char* originalData, int W, int H) {
+    // Determine unique thread ID
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
-
+    // Bounds check due to all-in-one formula for minimum block amount
     if (x >= W || y >= H) {
         return;
     }
-
-    int i = y * W * 3 + x * 3;
-    imageUnchanged[i] = __uint2float_rd(image[i]);
-    imageUnchanged[i + 1] = __uint2float_rd(image[i + 1]);
-    imageUnchanged[i + 2] = __uint2float_rd(image[i + 2]);
+    int offset = W * y * 3 + x * 3;
+    imageUnchanged[i]   = __uint2float_rd(originalData[i]);
+    imageUnchanged[i + 1] = __uint2float_rd(originalData[i + 1]);
+    imageUnchanged[i + 2] = __uint2float_rd(originalData[i + 2]);
 }
 
 // free memory of an AccurateImage
@@ -36,67 +35,64 @@ void freeImage(AccurateImage *image){
 	free(image->data);
 	free(image);
 }
+__global__ void performNewIdeaIterationGPU(float* imageOut, float* imageIn, int size, int W, int H) {
+    int X = blockIdx.x * blockDim.x + threadIdx.x;
+    int Y = blockIdx.y * blockDim.y + threadIdx.y;
+    if (X >= W || Y >= H) {
+        return;
+    }
 
-__global__ void performNewIdeaIterationGPU(float *imageOut, float *imageIn, int size, int W, int H) {
-  int x = blockIdx.x * blockDim.x + threadIdx.x;
-  int y = blockIdx.y * blockDim.y + threadIdx.y;
-  if (x >= W || y >= H) {
-      return;
-  }
-  
-  // For each pixel we compute the magic number
-  float sumR = 0;
-  float sumG = 0;
-  float sumB = 0;
-  int countIncluded = 0;
-  
-  for(int i = -size; i <= size; i++)
-  {
-    for(int j = -size; j <= size; j++)
-    {
-      int currentX = x + i;
-      int currentY = y + j;
-      // Check if we are outside the bounds
-      if(currentX < 0)
-        continue;
-      if(currentX >= W)
-		    continue;
-		  if(currentY < 0)
-			  continue;
-		  if(currentY >= H)
-			  continue;
+    float sumR = 0.;
+    float sumG = 0.;
+    float sumB = 0.;
+    int countIncluded = 0;
+    for(int x = -size; x <= size; x++) {
 
-			// Now we can begin
-			int offsetOfThePixel = (W * currentY + currentX);
-			sumR += imageIn[offsetOfThePixel];
-			sumG += imageIn[offsetOfThePixel+1];
-			sumB += imageIn[offsetOfThePixel+2];
+        for(int y = -size; y <= size; y++) {
+            int currentX = X + x;
+            int currentY = Y + y;
 
-			// Keep track of how many values we have included
-			countIncluded++;
-		}
-	}
-  // Now we compute the final value for all colours
-  float valueR = sumR / countIncluded;
-  float valueG = sumG / countIncluded;
-  float valueB = sumB / countIncluded;
+            // Check if we are outside the bounds
+            if(currentX < 0)
+                continue;
+            if(currentX >= W)
+                continue;
+            if(currentY < 0)
+                continue;
+            if(currentY >= H)
+                continue;
 
-  // Update the output image
-  int i = y * W * 3 + x * 3;
-  imageOut[i] = valueR;
-  imageOut[i + 1] = valueG;
-  imageOut[i + 2] = valueB;
+            // Now we can begin
+            int offset = (W * currentY * 3) + (currentX * 3);
+            sumR += imageIn[offset];
+            sumG += imageIn[offset+1];
+            sumB += imageIn[offset+2];
+
+            // Keep track of how many values we have included
+            countIncluded++;
+        }
+
+    }
+    float valueR = sumR / countIncluded;
+    float valueG = sumG / countIncluded;
+    float valueB = sumB / countIncluded;
+
+    int i = (W * Y * 3) + (X * 3);
+    imageOut[i] = valueR;
+    imageOut[i + 1] = valueG;
+    imageOut[i + 2] = valueB;
 }
 
 __global__ void performNewIdeaFinalizationGPU(float* imageInSmall, float* imageInLarge, unsigned char* imageOut, int W, int H) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
-    if (x >= W || y >= H)
+    if (x >= W || y >= H) {
         return;
+    }
 
-    int i = y * W * 3 + x * 3;
+    int i = W * y * 3 + x * 3;
 
-    float value = imageInLarge[i] - imageInSmall[i];
+    float value = (imageInLarge[i] - imageInSmall[i]);
     if(value > 255.0f)
         imageOut[i] = 255;
     else if (value < -1.0f) {
@@ -110,7 +106,8 @@ __global__ void performNewIdeaFinalizationGPU(float* imageInSmall, float* imageI
     } else {
         imageOut[i] = floorf(value);
     }
-    value = imageInLarge[i+1] - imageInSmall[i+1];
+
+    value = (imageInLarge[i+1] - imageInSmall[i+1]);
     if(value > 255.0f)
         imageOut[i+1] = 255;
     else if (value < -1.0f) {
@@ -124,7 +121,8 @@ __global__ void performNewIdeaFinalizationGPU(float* imageInSmall, float* imageI
     } else {
         imageOut[i+1] = floorf(value);
     }
-    value = imageInLarge[i+2] - imageInSmall[i+2];
+
+    value = (imageInLarge[i+2] - imageInSmall[i+2]);
     if(value > 255.0f)
         imageOut[i+2] = 255;
     else if (value < -1.0f) {
@@ -139,7 +137,6 @@ __global__ void performNewIdeaFinalizationGPU(float* imageInSmall, float* imageI
         imageOut[i+2] = floorf(value);
     }
 }
-
 int main(int argc, char** argv) {
 
   PPMImage *image;
@@ -161,7 +158,7 @@ int main(int argc, char** argv) {
       32
   );
 
-  
+
   size_t data_size = 3*W*H*sizeof(float);
   size_t PPMdata_size = sizeof(unsigned char) * W * H;
 
