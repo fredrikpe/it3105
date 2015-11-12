@@ -17,14 +17,14 @@ typedef struct {
 } AccurateImage;
 
 __global__ void convertImageToNewFormatGPU(float* imageUnchanged, unsigned char* originalData, int W, int H) {
-    // Determine unique thread ID
+    
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
-    // Bounds check due to all-in-one formula for minimum block amount
+    
     if (x >= W || y >= H) {
         return;
     }
-    int offset = W * y * 3 + x * 3;
+    int i = W * y * 3 + x * 3;
     imageUnchanged[i]   = __uint2float_rd(originalData[i]);
     imageUnchanged[i + 1] = __uint2float_rd(originalData[i + 1]);
     imageUnchanged[i + 2] = __uint2float_rd(originalData[i + 2]);
