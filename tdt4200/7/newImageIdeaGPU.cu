@@ -88,7 +88,6 @@ __global__ void performNewIdeaFinalizationGPU(float* imageInSmall, float* imageI
     if (x >= W || y >= H) {
         return;
     }
-
     int i = (W * y + x) * 3;
 
     float value = (imageInLarge[i] - imageInSmall[i]);
@@ -172,15 +171,12 @@ int main(int argc, char** argv) {
   imageOut->y = H;
   // Allocate memory on the GPU
   cudaMalloc(&deviceOut, PPMdata_size);
-  cudaMemcpy(deviceOut, image->data, PPMdata_size, cudaMemcpyHostToDevice);
-
   cudaMalloc(&deviceUnchanged, data_size);
-
   cudaMalloc(&deviceBuffer, data_size);
-
   cudaMalloc(&deviceSmall, data_size);
-
   cudaMalloc(&deviceBig, data_size);
+
+  cudaMemcpy(deviceOut, image->data, PPMdata_size, cudaMemcpyHostToDevice);
 
   convertImageToNewFormatGPU<<<blockDim, threadDim>>>(deviceUnchanged, deviceOut, W, H);
 
