@@ -16,7 +16,7 @@ typedef struct {
      AccuratePixel *data;
 } AccurateImage;
 
-__global__ void convertImageToNewFormatGPU(int width, int height, float* imageUnchanged, unsigned char* originalData)
+__global__ void convertImageToNewFormatGPU(float* imageUnchanged, unsigned char* image, int W, int H)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -26,9 +26,9 @@ __global__ void convertImageToNewFormatGPU(int width, int height, float* imageUn
     }
 
     int i = y * W * 3 + x * 3;
-    imageUnchanged[i] = (float) originalData[i];
-    imageUnchanged[i + 1] = (float) originalData[i + 1];
-    imageUnchanged[i + 2] = (float) originalData[i + 2];
+    imageUnchanged[i] = __uint2float_rd(image[i]);
+    imageUnchanged[i + 1] = __uint2float_rd(image[i + 1]);
+    imageUnchanged[i + 2] = __uint2float_rd(image[i + 2]);
 }
 
 // free memory of an AccurateImage
@@ -43,14 +43,13 @@ __global__ void performNewIdeaIterationGPU(float *imageOut, float *imageIn, int 
   if (x >= W || y >= H) {
       return;
   }
-    // For each pixel we compute the magic number
+  
+  // For each pixel we compute the magic number
   float sumR = 0;
   float sumG = 0;
   float sumB = 0;
   int countIncluded = 0;
-  int senterY = (i+1) / H;
-  int senterX = i - W * senterY;
-
+  
   for(int i = -size; i <= size; i++)
   {
     for(int j = -size; j <= size; j++)
@@ -98,11 +97,47 @@ __global__ void performNewIdeaFinalizationGPU(float* imageInSmall, float* imageI
     int i = y * W * 3 + x * 3;
 
     float value = imageInLarge[i] - imageInSmall[i];
-    imageOut[i] = (int) value;
+    if(value > 255.0f)
+        imageOut[i] = 255;
+    else if (value < -1.0f) {
+        value = 257.0f+value;
+        if(value > 255.0f)
+            imageOut[i] = 255;
+        else
+            imageOut[i] = floorf(value);
+    } else if (value > -1.0f && value < 0.0f) {
+        imageOut[i] = 0;
+    } else {
+        imageOut[i] = floorf(value);
+    }
     value = imageInLarge[i+1] - imageInSmall[i+1];
-    imageOut[i+1] = (int) value;
+    if(value > 255.0f)
+        imageOut[i+1] = 255;
+    else if (value < -1.0f) {
+        value = 257.0f+value;
+        if(value > 255.0f)
+            imageOut[i+1] = 255;
+        else
+            imageOut[i+1] = floorf(value);
+    } else if (value > -1.0f && value < 0.0f) {
+        imageOut[i+1] = 0;
+    } else {
+        imageOut[i+1] = floorf(value);
+    }
     value = imageInLarge[i+2] - imageInSmall[i+2];
-    imageOut[i+2] = (int) value;
+    if(value > 255.0f)
+        imageOut[i+2] = 255;
+    else if (value < -1.0f) {
+        value = 257.0f+value;
+        if(value > 255.0f)
+            imageOut[i+2] = 255;
+        else
+            imageOut[i+2] = floorf(value);
+    } else if (value > -1.0f && value < 0.0f) {
+        imageOut[i+2] = 0;
+    } else {
+        imageOut[i+2] = floorf(value);
+    }
 }
 
 int main(int argc, char** argv) {
@@ -117,32 +152,32 @@ int main(int argc, char** argv) {
 
   int W = image->x;
   int H = image->y;
-  dim3 dimGrid(
-      ceilf((width + 31) / 32),
-      ceilf((height + 31) / 32)
+  dim3 numBlocks(
+      ceilf((W + 31) / 32),
+      ceilf((H + 31) / 32)
   );
-  dim3 dimBlock(
+  dim3 numThreads(
       32,
       32
   );
 
-  //size_t image_size = sizeof(AccurateImage);
+  
   size_t data_size = 3*W*H*sizeof(float);
-  //size_t PPMimage_size = sizeof(PPMImage);
-  size_t PPMdata_size = sizeof(PPMPixel) * W * H;
+  size_t PPMdata_size = sizeof(unsigned char) * W * H;
 
   float *deviceUnchanged;
   float *deviceBuffer;
   float *deviceSmall;
   float *deviceBig;
-  float *deviceOut;
+  unsigned char *deviceOut;
 
   PPMImage *imageOut;
   imageOut = (PPMImage *)malloc(sizeof(PPMImage));
   imageOut->data = (PPMPixel*)malloc(image->x * image->y * sizeof(PPMPixel));
-
+  imageOut->x = W;
+  imageOut->y = H;
   // Allocate memory on the GPU
-  cudaMalloc(&deviceOut, data_size);
+  cudaMalloc(&deviceOut, PPMdata_size);
   cudaMemcpy(deviceOut, image->data, PPMdata_size, cudaMemcpyHostToDevice);
 
   cudaMalloc(&deviceUnchanged, data_size);
@@ -153,7 +188,7 @@ int main(int argc, char** argv) {
 
   cudaMalloc(&deviceBig, data_size);
 
-  convertImageToNewFormatGPU<<<numBlocks, numThreads>>>();
+  convertImageToNewFormatGPU<<<numBlocks, numThreads>>>(deviceUnchanged, deviceOut, W, H);
 
   // Do iterations
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceSmall, deviceUnchanged, 2, W, H);
@@ -172,9 +207,9 @@ int main(int argc, char** argv) {
   performNewIdeaFinalizationGPU<<<numBlocks, numThreads>>>(deviceSmall, deviceBig, deviceOut, W, H);
   cudaMemcpy(imageOut->data, deviceOut, PPMdata_size, cudaMemcpyDeviceToHost);
   if(argc > 1) {
-    writePPM("flower_medium.ppm", image);
+    writePPM("flower_tiny.ppm", imageOut);
   } else {
-    writeStreamPPM(stdout, image);
+    writeStreamPPM(stdout, imageOut);
   }
 
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceSmall, deviceUnchanged, 5, W, H);
@@ -186,9 +221,9 @@ int main(int argc, char** argv) {
   performNewIdeaFinalizationGPU<<<numBlocks, numThreads>>>(deviceBig, deviceSmall, deviceOut, W, H);
   cudaMemcpy(imageOut->data, deviceOut, PPMdata_size, cudaMemcpyDeviceToHost);
   if(argc > 1) {
-    writePPM("flower_medium.ppm", image);
+    writePPM("flower_small.ppm", imageOut);
   } else {
-    writeStreamPPM(stdout, image);
+    writeStreamPPM(stdout, imageOut);
   }
 
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceBig, deviceUnchanged, 8, W, H);
@@ -200,9 +235,9 @@ int main(int argc, char** argv) {
   performNewIdeaFinalizationGPU<<<numBlocks, numThreads>>>(deviceSmall, deviceBig, deviceOut, W, H);
   cudaMemcpy(imageOut->data, deviceOut, PPMdata_size, cudaMemcpyDeviceToHost);
   if(argc > 1) {
-    writePPM("flower_medium.ppm", image);
+    writePPM("flower_medium.ppm", imageOut);
   } else {
-    writeStreamPPM(stdout, image);
+    writeStreamPPM(stdout, imageOut);
   }
 
   cudaFree(deviceUnchanged);
