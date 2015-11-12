@@ -24,9 +24,9 @@ __global__ void convertImageToNewFormatGPU(float* imageUnchanged, unsigned char*
         return;
     }
     int i = (W * y + x) * 3;
-    imageUnchanged[i]   = __uint2float_rd(image[i]);
-    imageUnchanged[i + 1] = __uint2float_rd(image[i + 1]);
-    imageUnchanged[i + 2] = __uint2float_rd(image[i + 2]);
+    imageUnchanged[i] = (float)image[i];
+    imageUnchanged[i + 1] = (float)image[i + 1];
+    imageUnchanged[i + 2] = (float)image[i + 2];
 }
 
 // free memory of an AccurateImage
@@ -147,16 +147,16 @@ int main(int argc, char** argv) {
   int W = image->x;
   int H = image->y;
   dim3 blockDim(
-      ceilf((W + 31) / 32),
-      ceilf((H + 31) / 32)
+      W / 32,
+      H / 30
   );
   dim3 threadDim(
       32,
-      32
+      30
   );
 
   size_t data_size = 3*W*H*sizeof(float);
-  size_t PPMdata_size = sizeof(unsigned char) * W * H;
+  size_t PPMdata_size = sizeof(unsigned char) * W * H * 3;
 
   float *deviceUnchanged;
   float *deviceBuffer;
