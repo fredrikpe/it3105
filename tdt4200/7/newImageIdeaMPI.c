@@ -226,18 +226,18 @@ int main(int argc, char** argv) {
 
 	int W = image->x;
 	int H = image->y;
-	
+
 	AccurateImage *imageUnchanged = convertImageToNewFormat(image); // save the unchanged image from input image
 	AccurateImage *imageBuffer = createEmptyImage(image);
 	AccurateImage *imageSmall = createEmptyImage(image);
 	AccurateImage *imageBig = createEmptyImage(image);
-	
-	
+
+
 	PPMImage *imageOut;
 	imageOut = (PPMImage *)malloc(sizeof(PPMImage));
 	imageOut->data = (PPMPixel*)malloc(W * H * sizeof(PPMPixel));
-	
-	
+
+
 	// Process the tiny case:
 	if (rank == 0)
 	{
@@ -245,38 +245,38 @@ int main(int argc, char** argv) {
 		// Send to rank 1
 		MPI_Isend(imageSmall->data, W*H*3, MPI_FLOAT, 1, 9, MPI_COMM_WORLD, &request);
 	}
-	
+
 	// Process the small case:
 	if (rank == 1)
 	{
 		// Recv from rank 0
 		MPI_Irecv(imageSmall->data, W*H*3, MPI_FLOAT, 0, 9, MPI_COMM_WORLD, &r0);
-		
+
 		fiveIterations(imageBig, imageUnchanged, imageBuffer, 3);
 		// Send to rank 2
 		MPI_Isend(imageBig->data, W*H*3, MPI_FLOAT, 2, 9, MPI_COMM_WORLD, &request);
 
-		MPI_Wait(&r0,&status);	
+		MPI_Wait(&r0,&status);
 		performNewIdeaFinalization(imageSmall,  imageBig, imageOut);
 		writePPM("flower_tiny.ppm", imageOut);
 
-		
+
 	}
-	
+
 	// Process the medium case:
 	if (rank == 2)
 	{
 		// Recv from rank 1
-		MPI_Irecv(imageBig->data, W*H*3, MPI_FLOAT, 1, 9, MPI_COMM_WORLD, &r1);	
+		MPI_Irecv(imageBig->data, W*H*3, MPI_FLOAT, 1, 9, MPI_COMM_WORLD, &r1);
 
 		fiveIterations(imageSmall, imageUnchanged, imageBuffer, 5);
 		// Send to rank 3
 		MPI_Isend(imageSmall->data, W*H*3, MPI_FLOAT, 3, 9, MPI_COMM_WORLD, &request);
-			
+
 		MPI_Wait(&r1,&status);
 		performNewIdeaFinalization(imageBig,  imageSmall,imageOut);
 		writePPM("flower_small.ppm", imageOut);
-		
+
 	}
 
 	// process the large case
@@ -284,16 +284,15 @@ int main(int argc, char** argv) {
 	{
 		// Recv from rank 2
 		MPI_Irecv(imageSmall->data, W*H*3, MPI_FLOAT, 2, 9, MPI_COMM_WORLD, &r2);
-		
+
 		fiveIterations(imageBig, imageUnchanged, imageBuffer, 8);
-			
-		MPI_Wait(&r2,&status);		
+
+		MPI_Wait(&r2,&status);
 		performNewIdeaFinalization(imageSmall,  imageBig, imageOut);
 		writePPM("flower_medium.ppm", imageOut);
 	}
 
-	
-	MPI_Barrier(MPI_COMM_WORLD); 
+	MPI_Barrier(MPI_COMM_WORLD);
 
 	// free all memory structures
 	freeImage(imageUnchanged);

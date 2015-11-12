@@ -16,47 +16,19 @@ typedef struct {
      AccuratePixel *data;
 } AccurateImage;
 
-// Convert a PPM image to a high-precision format
-AccurateImage * convertImageToNewFormat(PPMImage *image) {
+__global__ void convertImageToNewFormatGPU(int width, int height, float* imageUnchanged, unsigned char* originalData)
+{
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-  AccurateImage *a = (AccurateImage*)malloc(sizeof(AccurateImage));
-  a->data = (AccuratePixel*)malloc(image->x*image->y*sizeof(AccuratePixel));
-  for(int i = 0; i < image->x*image->y; i++)
-  {
-		a->data[i].red   = (float) image->data[i].red;
-		a->data[i].green = (float) image->data[i].green;
-		a->data[i].blue  = (float) image->data[i].blue;
-  }
-  a->x = image->x;
-  a->y = image->y;
-  return a;
-}
+    if (x >= W || y >= H) {
+        return;
+    }
 
-AccurateImage *createEmptyImage(PPMImage *image){
-  AccurateImage *imageAccurate;
-  imageAccurate = (AccurateImage *)malloc(sizeof(AccurateImage));
-  imageAccurate->data = (AccuratePixel*)malloc(image->x * image->y * sizeof(AccuratePixel));
-  imageAccurate->x = image->x;
-  imageAccurate->y = image->y;
-
-  return imageAccurate;
-}
-
-// Convert a high-precision format to a PPM image
-PPMImage *convertNewFormatToPPM(AccurateImage *image) {
-	// Make a copy
-	PPMImage *imagePPM;
-	imagePPM = (PPMImage *)malloc(sizeof(PPMImage));
-	imagePPM->data = (PPMPixel*)malloc(image->x * image->y * sizeof(PPMPixel));
-	for(int i = 0; i < image->x * image->y; i++) {
-		imagePPM->data[i].red   = (unsigned char) image->data[i].red;
-		imagePPM->data[i].green = (unsigned char) image->data[i].green;
-		imagePPM->data[i].blue  = (unsigned char) image->data[i].blue;
-	}
-	imagePPM->x = image->x;
-	imagePPM->y = image->y;
-
-	return imagePPM;
+    int i = y * W * 3 + x * 3;
+    imageUnchanged[i] = (float) originalData[i];
+    imageUnchanged[i + 1] = (float) originalData[i + 1];
+    imageUnchanged[i + 2] = (float) originalData[i + 2];
 }
 
 // free memory of an AccurateImage
@@ -66,87 +38,71 @@ void freeImage(AccurateImage *image){
 }
 
 __global__ void performNewIdeaIterationGPU(float *imageOut, float *imageIn, int size, int W, int H) {
-
-
-  // This assumes that (channels * width * height) is divisible by (number of blocks)
-  int pixels_per_column = (W*H) / gridDim.x;
-
-  // The start index of a single thread is the start location of the block,
-  // plus the thread's index within the block
-  int start = (blockIdx.x * pixels_per_column) + threadIdx.x;
-
-  // Run until the start index of the next block
-  int stop =  ((blockIdx.x + 1) * pixels_per_column);
-
-
-  for(int i = start; i < stop; i += blockDim.x) {
+  int x = blockIdx.x * blockDim.x + threadIdx.x;
+  int y = blockIdx.y * blockDim.y + threadIdx.y;
+  if (x >= W || y >= H) {
+      return;
+  }
     // For each pixel we compute the magic number
-    float sumR = 0;
-    float sumG = 0;
-    float sumB = 0;
-    int countIncluded = 0;
-    int senterY = (i+1) / H;
-    int senterX = i - W * senterY;
+  float sumR = 0;
+  float sumG = 0;
+  float sumB = 0;
+  int countIncluded = 0;
+  int senterY = (i+1) / H;
+  int senterX = i - W * senterY;
 
-    for(int x = -size; x <= size; x++) {
+  for(int i = -size; i <= size; i++)
+  {
+    for(int j = -size; j <= size; j++)
+    {
+      int currentX = x + i;
+      int currentY = y + j;
+      // Check if we are outside the bounds
+      if(currentX < 0)
+        continue;
+      if(currentX >= W)
+		    continue;
+		  if(currentY < 0)
+			  continue;
+		  if(currentY >= H)
+			  continue;
 
-	for(int y = -size; y <= size; y++) {
-		int currentX = senterX + x;
-		int currentY = senterY + y;
-			// Check if we are outside the bounds
-			if(currentX < 0)
-				continue;
-			if(currentX >= W)
-				continue;
-			if(currentY < 0)
-				continue;
-			if(currentY >= H)
-				continue;
+			// Now we can begin
+			int offsetOfThePixel = (W * currentY + currentX);
+			sumR += imageIn[offsetOfThePixel];
+			sumG += imageIn[offsetOfThePixel+1];
+			sumB += imageIn[offsetOfThePixel+2];
 
-				// Now we can begin
-				int numberOfValuesInEachRow = W;
-				int offsetOfThePixel = (numberOfValuesInEachRow * currentY + currentX);
-				sumR += imageIn[offsetOfThePixel];
-				sumG += imageIn[offsetOfThePixel+1];
-				sumB += imageIn[offsetOfThePixel+2];
-
-				// Keep track of how many values we have included
-				countIncluded++;
-			}
+			// Keep track of how many values we have included
+			countIncluded++;
 		}
-
-		// Now we compute the final value for all colours
-		float valueR = sumR / countIncluded;
-		float valueG = sumG / countIncluded;
-		float valueB = sumB / countIncluded;
-
-		// Update the output image
-		int numberOfValuesInEachRow = W; // R, G and B
-		int offsetOfThePixel = (numberOfValuesInEachRow * senterY + senterX);
-		imageOut[offsetOfThePixel] = valueR;
-		imageOut[offsetOfThePixel+1] = valueG;
-		imageOut[offsetOfThePixel+2] = valueB;
 	}
+  // Now we compute the final value for all colours
+  float valueR = sumR / countIncluded;
+  float valueG = sumG / countIncluded;
+  float valueB = sumB / countIncluded;
+
+  // Update the output image
+  int i = y * W * 3 + x * 3;
+  imageOut[i] = valueR;
+  imageOut[i + 1] = valueG;
+  imageOut[i + 2] = valueB;
 }
 
-// Perform the final step, and save it as a ppm in imageOut
-__global__ void performNewIdeaFinalizationGPU(float *imageInSmall, float *imageInLarge, float *imageOut)
-{
-  int element_count = sizeof(imageInSmall)/4;
-  int pixels_per_column = element_count / gridDim.x;
-  int start = (blockIdx.x * pixels_per_column) + threadIdx.x;
-  int stop =  ((blockIdx.x + 1) * pixels_per_column);
+__global__ void performNewIdeaFinalizationGPU(float* imageInSmall, float* imageInLarge, unsigned char* imageOut, int W, int H) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    if (x >= W || y >= H)
+        return;
 
+    int i = y * W * 3 + x * 3;
 
-  for(int i = start; i < stop; i += blockDim.x)
-  {
     float value = imageInLarge[i] - imageInSmall[i];
     imageOut[i] = (int) value;
     value = imageInLarge[i+1] - imageInSmall[i+1];
     imageOut[i+1] = (int) value;
     value = imageInLarge[i+2] - imageInSmall[i+2];
     imageOut[i+2] = (int) value;
-  }
 }
 
 int main(int argc, char** argv) {
@@ -161,16 +117,19 @@ int main(int argc, char** argv) {
 
   int W = image->x;
   int H = image->y;
-  const int numBlocks = 5;				// Total number of blocks
-  const int numThreads = 32;				// Threads per block. 32 is the recommended size by nvidia,
+  dim3 dimGrid(
+      ceilf((width + 31) / 32),
+      ceilf((height + 31) / 32)
+  );
+  dim3 dimBlock(
+      32,
+      32
+  );
 
   //size_t image_size = sizeof(AccurateImage);
   size_t data_size = 3*W*H*sizeof(float);
   //size_t PPMimage_size = sizeof(PPMImage);
   size_t PPMdata_size = sizeof(PPMPixel) * W * H;
-
-  AccurateImage *imageUnchanged = convertImageToNewFormat(image); // save the unchanged image from input image
-  AccurateImage *imageDummy = createEmptyImage(image);
 
   float *deviceUnchanged;
   float *deviceBuffer;
@@ -182,28 +141,21 @@ int main(int argc, char** argv) {
   imageOut = (PPMImage *)malloc(sizeof(PPMImage));
   imageOut->data = (PPMPixel*)malloc(image->x * image->y * sizeof(PPMPixel));
 
-
-
   // Allocate memory on the GPU
-  cudaMalloc((void**) &deviceUnchanged, data_size);
-  cudaMemcpy(deviceUnchanged, imageUnchanged->data, data_size, cudaMemcpyHostToDevice);
+  cudaMalloc(&deviceOut, data_size);
+  cudaMemcpy(deviceOut, image->data, PPMdata_size, cudaMemcpyHostToDevice);
 
-  cudaMalloc((void**) &deviceBuffer, data_size);
-  cudaMemcpy(deviceBuffer, imageDummy->data, data_size, cudaMemcpyHostToDevice);
+  cudaMalloc(&deviceUnchanged, data_size);
 
-  cudaMalloc((void**) &deviceSmall, data_size);
-  cudaMemcpy(deviceSmall, imageDummy->data, data_size, cudaMemcpyHostToDevice);
+  cudaMalloc(&deviceBuffer, data_size);
 
-  cudaMalloc((void**) &deviceBig, data_size);
-  cudaMemcpy(deviceBig, imageDummy->data, data_size, cudaMemcpyHostToDevice);
+  cudaMalloc(&deviceSmall, data_size);
 
-  cudaMalloc((void**) &deviceOut, PPMdata_size);
-  cudaMemcpy(deviceOut, imageDummy->data, PPMdata_size, cudaMemcpyHostToDevice);
+  cudaMalloc(&deviceBig, data_size);
 
+  convertImageToNewFormatGPU<<<numBlocks, numThreads>>>();
 
   // Do iterations
-
-
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceSmall, deviceUnchanged, 2, W, H);
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceBuffer, deviceSmall, 2, W, H);
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceSmall, deviceBuffer, 2, W, H);
@@ -217,8 +169,8 @@ int main(int argc, char** argv) {
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceBig, deviceBuffer, 3, W, H);
 
 
-  performNewIdeaFinalizationGPU<<<numBlocks, numThreads>>>(deviceSmall, deviceBig, deviceOut);
-  cudaMemcpy(image->data, deviceOut, PPMdata_size, cudaMemcpyDeviceToHost);
+  performNewIdeaFinalizationGPU<<<numBlocks, numThreads>>>(deviceSmall, deviceBig, deviceOut, W, H);
+  cudaMemcpy(imageOut->data, deviceOut, PPMdata_size, cudaMemcpyDeviceToHost);
   if(argc > 1) {
     writePPM("flower_medium.ppm", image);
   } else {
@@ -231,9 +183,8 @@ int main(int argc, char** argv) {
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceBuffer, deviceSmall, 5, W, H);
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceSmall, deviceBuffer, 5, W, H);
 
-  performNewIdeaFinalizationGPU<<<numBlocks, numThreads>>>(deviceBig, deviceSmall, deviceOut);
-  //cudaMemcpy(image, deviceOut, PPMimage_size, cudaMemcpyDeviceToHost);
-  cudaMemcpy(image->data, deviceOut, PPMdata_size, cudaMemcpyDeviceToHost);
+  performNewIdeaFinalizationGPU<<<numBlocks, numThreads>>>(deviceBig, deviceSmall, deviceOut, W, H);
+  cudaMemcpy(imageOut->data, deviceOut, PPMdata_size, cudaMemcpyDeviceToHost);
   if(argc > 1) {
     writePPM("flower_medium.ppm", image);
   } else {
@@ -246,9 +197,8 @@ int main(int argc, char** argv) {
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceBuffer, deviceBig, 8, W, H);
   performNewIdeaIterationGPU<<<numBlocks, numThreads>>>(deviceBig, deviceBuffer, 8, W, H);
 
-  performNewIdeaFinalizationGPU<<<numBlocks, numThreads>>>(deviceSmall, deviceBig, deviceOut);
-  //cudaMemcpy(image, deviceOut, PPMimage_size, cudaMemcpyDeviceToHost);
-  cudaMemcpy(image->data, deviceOut, PPMdata_size, cudaMemcpyDeviceToHost);
+  performNewIdeaFinalizationGPU<<<numBlocks, numThreads>>>(deviceSmall, deviceBig, deviceOut, W, H);
+  cudaMemcpy(imageOut->data, deviceOut, PPMdata_size, cudaMemcpyDeviceToHost);
   if(argc > 1) {
     writePPM("flower_medium.ppm", image);
   } else {

@@ -35,7 +35,8 @@ AccurateImage *convertImageToNewFormat(PPMImage *image) {
   return imageAccurate;
 }
 
-AccurateImage *createEmptyImage(PPMImage *image){
+AccurateImage *createEmptyImage(PPMImage *image)
+{
   AccurateImage *imageAccurate;
   imageAccurate = (AccurateImage *)malloc(sizeof(AccurateImage));
   imageAccurate->data = (AccuratePixel*)malloc(image->x * image->y * sizeof(AccuratePixel));
@@ -46,27 +47,29 @@ AccurateImage *createEmptyImage(PPMImage *image){
 }
 
 // free memory of an AccurateImage
-void freeImage(AccurateImage *image){
+void freeImage(AccurateImage *image)
+{
   free(image->data);
   free(image);
 }
 
-void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int size) {
 
+void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int size)
+{
   int W = imageIn->x;
   int H = imageIn->y;
   int each = H/4;
 
   #pragma omp parallel num_threads(4)
   {
-    AccuratePixel *line_buffer = (AccuratePixel*) malloc(W*sizeof(AccuratePixel));
-    memset(line_buffer,0,W*sizeof(AccuratePixel));
-
-    float sum_red;
-    float sum_blue;
-    float sum_green;
+    float sum_red = 0;
+    float sum_blue = 0;
+    float sum_green =0;
     float rec = 1.0 / (2*size + 1);
 
+    // line buffer that will save the sum of some pixel in the column
+    AccuratePixel *line_buffer = (AccuratePixel*) malloc(W*sizeof(AccuratePixel));
+    memset(line_buffer,0,W*sizeof(AccuratePixel));
 
     #pragma omp for
     for(int senterY = 0; senterY < H; senterY++) {
@@ -88,7 +91,6 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
           }
         }
       }
-
       int starty = senterY-size;
       int endy = senterY+size;
 
@@ -101,7 +103,6 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
           line_buffer[i].green+=imageIn->data[W*endy+i].green;
         }
       }
-
       else if (endy >= H ){
         // for the last lines, we just need to subtract the first added line
         endy = H-1;
@@ -119,15 +120,10 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
           line_buffer[i].green+=imageIn->data[W*endy+i].green-imageIn->data[W*(starty-1)+i].green;
         }
       }
-      // End of line_buffer initialisation.
-
-
-      sum_green =0;
+      sum_green = 0;
       sum_red = 0;
       sum_blue = 0;
       for(int senterX = 0; senterX < W; senterX++) {
-        // in this loop, we do exactly the same thing as before but only with the array line_buffer
-
         int startx = senterX-size;
         int endx = senterX+size;
 
@@ -155,7 +151,6 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
           sum_green += (line_buffer[endx].green-line_buffer[startx-1].green);
           sum_blue += (line_buffer[endx].blue-line_buffer[startx-1].blue);
         }
-
         imageOut->data[senterY*W + senterX].red = sum_red * rec;
         imageOut->data[senterY*W + senterX].green = sum_green * rec;
         imageOut->data[senterY*W + senterX].blue = sum_blue * rec;
