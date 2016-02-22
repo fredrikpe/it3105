@@ -9,6 +9,8 @@
 // Image from:
 // http://7-themes.com/6971875-funny-flowers-pictures.html
 
+#pragma GCC optimize("Ofast")
+
 typedef struct {
   float red,green,blue;
 } AccuratePixel;
@@ -24,6 +26,7 @@ AccurateImage *convertImageToNewFormat(PPMImage *image) {
   AccurateImage *imageAccurate;
   imageAccurate = (AccurateImage *)malloc(sizeof(AccurateImage));
   imageAccurate->data = (AccuratePixel*)malloc(image->x * image->y * sizeof(AccuratePixel));
+  #pragma omp parallel for
   for(int i = 0; i < image->x * image->y; i++) {
     imageAccurate->data[i].red   = (float) image->data[i].red;
     imageAccurate->data[i].green = (float) image->data[i].green;
@@ -60,7 +63,7 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
   int H = imageIn->y;
   int each = H/4;
 
-  #pragma omp parallel num_threads(4)
+  #pragma omp parallel //num_threads(4)
   {
     float sum_red = 0;
     float sum_blue = 0;
@@ -91,6 +94,7 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
           }
         }
       }
+
       int starty = senterY-size;
       int endy = senterY+size;
 
@@ -103,6 +107,7 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
           line_buffer[i].green+=imageIn->data[W*endy+i].green;
         }
       }
+
       else if (endy >= H ){
         // for the last lines, we just need to subtract the first added line
         endy = H-1;
@@ -120,10 +125,12 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int
           line_buffer[i].green+=imageIn->data[W*endy+i].green-imageIn->data[W*(starty-1)+i].green;
         }
       }
+
       sum_green = 0;
       sum_red = 0;
       sum_blue = 0;
       for(int senterX = 0; senterX < W; senterX++) {
+
         int startx = senterX-size;
         int endx = senterX+size;
 
@@ -165,7 +172,7 @@ void performNewIdeaFinalization(AccurateImage *imageInSmall, AccurateImage *imag
 {
   imageOut->x = imageInSmall->x;
   imageOut->y = imageInSmall->y;
-
+  #pragma omp for schedule(static)
   for(int i=0; i<imageInSmall->x * imageInSmall->y; i+=1)
   {
     float value = imageInLarge->data[i].red - imageInSmall->data[i].red;

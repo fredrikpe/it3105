@@ -32,6 +32,7 @@ void fixString(string &word) {
 
 int main () {
 
+    cin.sync_with_stdio(false);
 
     string line;
     getline(cin, line);
