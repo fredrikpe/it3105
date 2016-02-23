@@ -4,47 +4,10 @@
 #include <string.h>
 #include "omp.h"
 
-int compare (const void *a, const void *b)
+int cmpfunc (const void * a, const void * b)
 {
-    const int *ia = (const int *)a; // casting pointer types 
-    const int *ib = (const int *)b;
-    return *ia  - *ib; 
+           return ( *(int*)a - *(int*)b );
 }
-
-/*
-void partition (int* v, int lower, int upper, int *pivot );
-
-void quicksort (int *v, int start, int end ) {
-    if(start < end) {
-        int pivot;
-        partition(v,start,end,&pivot);
-        quicksort(v,start,pivot-1);
-        quicksort(v,pivot+1,end);
-    }
-}
-
-void partition (int* v, int lower, int upper, int *pivot )
-{
-    int x = v[lower];
-    printf("lower: %d, upper: %d\n", lower, upper);
-    int up = lower+1;   
-    int down = upper;  
-    while(up < down)
-    {
-        while((up < down) && (v[up] <= x)) up++;
-        while((up < down) && (v[down] > x)) down--;
-        if(up == down){ 
-            printf("Break");
-            break;
-        }
-        int tmp = v[up];
-        v[up] = v[down]; 
-        v[down] = tmp;
-    }
-    if(v[up] > x) up--;
-    v[lower] = v[up]; v[up] = x;
-    *pivot = up;
-}*/
 
 void quick_sort (int *a, int n) {
     int i = partition(a, n);
@@ -94,14 +57,33 @@ int main()
             }
         }
     } 
-
+    
+    // Makes two parts
     p = partition(nums, c);
 
-    omp_set_num_threads(2);
+    int pivot[2];
+    // Makes four parts, in two threads.
     #pragma omp parallel for
     for (j=0;j<2;j++)
     {
-        quick_sort(nums + p*j, c*j + p - 2*c*p);
+        pivot[j] = partition(nums + p*j, c*j + p - 2*j*p);
+    }
+    // The rest in four threads.
+    #pragma omp parallel for
+    for (j=0;j<4;j++)
+    {
+        if (0==j)
+            qsort(nums, pivot[0], sizeof(int), cmpfunc);
+            //quick_sort(nums, pivot[0]);
+        else if (1==j)
+            qsort(nums + pivot[0], p - pivot[0], sizeof(int), cmpfunc);
+            //quick_sort(nums + pivot[0], p - pivot[0]);
+        else if (2==j)
+            qsort(nums + p, pivot[1], sizeof(int), cmpfunc);
+            //quick_sort(nums + p, pivot[1]);
+        else
+            qsort(nums + p + pivot[1], c - p - pivot[1], sizeof(int), cmpfunc);
+            //quick_sort(nums + p + pivot[1], c - p - pivot[1]);
     }
 
     printf("s ");

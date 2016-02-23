@@ -4,47 +4,6 @@
 #include <string.h>
 #include "omp.h"
 
-int compare (const void *a, const void *b)
-{
-    const int *ia = (const int *)a; // casting pointer types 
-    const int *ib = (const int *)b;
-    return *ia  - *ib; 
-}
-
-/*
-void partition (int* v, int lower, int upper, int *pivot );
-
-void quicksort (int *v, int start, int end ) {
-    if(start < end) {
-        int pivot;
-        partition(v,start,end,&pivot);
-        quicksort(v,start,pivot-1);
-        quicksort(v,pivot+1,end);
-    }
-}
-
-void partition (int* v, int lower, int upper, int *pivot )
-{
-    int x = v[lower];
-    printf("lower: %d, upper: %d\n", lower, upper);
-    int up = lower+1;   
-    int down = upper;  
-    while(up < down)
-    {
-        while((up < down) && (v[up] <= x)) up++;
-        while((up < down) && (v[down] > x)) down--;
-        if(up == down){ 
-            printf("Break");
-            break;
-        }
-        int tmp = v[up];
-        v[up] = v[down]; 
-        v[down] = tmp;
-    }
-    if(v[up] > x) up--;
-    v[lower] = v[up]; v[up] = x;
-    *pivot = up;
-}*/
 
 void quick_sort (int *a, int n) {
     int i = partition(a, n);
@@ -72,7 +31,21 @@ int partition (int *a, int n) {
     }
     return i;
 } 
- 
+
+void merge (int *a, int n, int m) {
+    int i, j, k;
+    int *x = malloc(n * sizeof (int));
+    for (i = 0, j = m, k = 0; k < n; k++) {
+        x[k] = j == n      ? a[i++]
+             : i == m      ? a[j++]
+             : a[j] < a[i] ? a[j++]
+             :               a[i++];
+    }
+    for (i = 0; i < n; i++) {
+        a[i] = x[i];
+    }
+    free(x);
+}
 int main()
 {
     char *line = NULL;
@@ -94,15 +67,28 @@ int main()
             }
         }
     } 
+    
+    int h = c/2;
+    int q = h/2;
 
-    p = partition(nums, c);
-
-    omp_set_num_threads(2);
     #pragma omp parallel for
-    for (j=0;j<2;j++)
+    for (j=0;j<4;j++)
     {
-        quick_sort(nums + p*j, c*j + p - 2*c*p);
+        if (0==j)
+            quick_sort(nums, q);
+        if (1==j)
+            quick_sort(nums + q, h - q);
+        if (2==j)
+            quick_sort(nums + h, q);
+        else
+            quick_sort(nums + h + q, c - h - q);
     }
+
+    merge(nums, h, q);
+    
+    merge(nums + h, c - h, q);
+
+    merge(nums, c, h);
 
     printf("s ");
     for (j = 0; j<c; j++) {

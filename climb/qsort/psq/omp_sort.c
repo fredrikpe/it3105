@@ -4,47 +4,6 @@
 #include <string.h>
 #include "omp.h"
 
-int compare (const void *a, const void *b)
-{
-    const int *ia = (const int *)a; // casting pointer types 
-    const int *ib = (const int *)b;
-    return *ia  - *ib; 
-}
-
-/*
-void partition (int* v, int lower, int upper, int *pivot );
-
-void quicksort (int *v, int start, int end ) {
-    if(start < end) {
-        int pivot;
-        partition(v,start,end,&pivot);
-        quicksort(v,start,pivot-1);
-        quicksort(v,pivot+1,end);
-    }
-}
-
-void partition (int* v, int lower, int upper, int *pivot )
-{
-    int x = v[lower];
-    printf("lower: %d, upper: %d\n", lower, upper);
-    int up = lower+1;   
-    int down = upper;  
-    while(up < down)
-    {
-        while((up < down) && (v[up] <= x)) up++;
-        while((up < down) && (v[down] > x)) down--;
-        if(up == down){ 
-            printf("Break");
-            break;
-        }
-        int tmp = v[up];
-        v[up] = v[down]; 
-        v[down] = tmp;
-    }
-    if(v[up] > x) up--;
-    v[lower] = v[up]; v[up] = x;
-    *pivot = up;
-}*/
 
 void quick_sort (int *a, int n) {
     int i = partition(a, n);
@@ -97,11 +56,10 @@ int main()
 
     p = partition(nums, c);
 
-    omp_set_num_threads(2);
     #pragma omp parallel for
     for (j=0;j<2;j++)
     {
-        quick_sort(nums + p*j, c*j + p - 2*c*p);
+        quick_sort(nums + p*j, c*j + p - 2*j*p);
     }
 
     printf("s ");

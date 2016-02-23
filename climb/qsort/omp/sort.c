@@ -98,10 +98,10 @@ int main()
     p = partition(nums, c);
 
     omp_set_num_threads(2);
-    #pragma omp parallel for
-    for (j=0;j<2;j++)
+    #pragma omp parallel
     {
-        quick_sort(nums + p*j, c*j + p - 2*c*p);
+        quick_sort(nums, p);
+        quick_sort(nums + p, c - p);
     }
 
     printf("s ");
