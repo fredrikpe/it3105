@@ -1,3 +1,16 @@
+/*
+ * Mergesort with OpenMP.
+ * 
+ * Mergesort splits in half every time so parallelizing is easy 
+ * enough. Still worse than serialized quicksort on the problem 
+ * on climb. 
+ * uses 4 cores (if available).
+ *
+ *
+ *
+ * Author: Fredrik Ingebrigtsen
+ */
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,7 +65,8 @@ int main()
 
     int h = c/2;
     int q = h/2;
-
+    
+    // Merge sort in up to 4 parallel threads.
     #pragma omp parallel for
     for (j=0;j<4;j++)
     {
@@ -67,12 +81,11 @@ int main()
     }
     
     merge(nums, h, q);
-    
     merge(nums + h, c - h, q);
-
     merge(nums, c, h);
 
 
+    // Printing the sorted list.
     printf("s ");
     for (j = 0; j<c; j++) {
         printf("%d ", nums[j]);
@@ -81,6 +94,5 @@ int main()
 
 
     free(nums);
-
     return 0;
 }
