@@ -67,38 +67,40 @@ void freeImage(AccurateImage *image)
     free(image);
 }
 
-void horizontalAvg(AccurateImage *imageOut, AccuratePixel *line_buffer, float rec, int W, int starty, int endy, int senterY, int size)
+void horizontalAvg(AccurateImage *imageOut, AccuratePixel *line_buffer, float rec, int W, int start_i, int end_i, int i, int size)
 {
     v4f sum_rgb = {0, 0, 0, 0};
-    // Initialization
-    for (int x=0; x < size; x++){
-        sum_rgb += line_buffer[x].rgb;
+    int j;
+    int start_j = 0;
+    int end_j = size - 1;
+
+    // Initiate with values
+    for (j=0; j < size; j++){
+        sum_rgb += line_buffer[j].rgb;
     }
     // Start edge
-    for(int i=0; i<=size; i++)
+    for(j=0; j<=size; j++)
     {
-        int endx = i+size;
-        int startx = 0;
-        sum_rgb +=line_buffer[endx].rgb;
-        rec = 1.0 / ((endx+1)*(endy-starty+1));
-        imageOut->data[W * senterY + i].rgb = sum_rgb * rec;
+        end_j++;
+        sum_rgb +=line_buffer[end_j].rgb;
+        rec = 1.0 / ((end_j+1)*(end_i-start_i+1));
+        imageOut->data[W*i + j].rgb = sum_rgb * rec;
     }
     // Middle part
-    for(int i=size+1; i<W-size; i++)
+    for(;j<W-size; j++)
     {
-        int startx = i-size;
-        int endx = i+size;
-        sum_rgb += (line_buffer[endx].rgb-line_buffer[startx-1].rgb);
-        imageOut->data[W * senterY + i].rgb = sum_rgb * rec;
+        start_j++;
+        end_j++;
+        sum_rgb += line_buffer[end_j].rgb-line_buffer[start_j-1].rgb;
+        imageOut->data[W*i + j].rgb = sum_rgb * rec;
     }
     // End edge
-    for(int i=W-size; i<W; i++)
+    for(;j<W; j++)
     {
-        int startx = i-size;
-        int endx = W-1;
-        sum_rgb -= line_buffer[startx-1].rgb;
-        rec = 1.0 / ((endx-startx+1)*(endy-starty+1));
-        imageOut->data[W * senterY + i].rgb = sum_rgb * rec;
+        start_j++;
+        sum_rgb -= line_buffer[start_j-1].rgb;
+        rec = 1.0 / ((end_j-start_j+1)*(end_i-start_i+1));
+        imageOut->data[W*i + j].rgb = sum_rgb * rec;
     }
 }
 
@@ -110,46 +112,45 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
     int W = imageIn->x;
     int H = imageIn->y;
 
-    // Line buffer for the vertical sums
-    
+    // Reset the line_buffer
     memset(line_buffer, 0, W * sizeof(AccuratePixel));
 
-    int starty;
-    int endy;
+    int start_i = 0;
+    int end_i = size - 1;
 
-    // Some initialization
-    for(int line_y=0; line_y < size; line_y++){
-        for(int i=0; i<W; i++){
-            line_buffer[i].rgb += imageIn->data[W*line_y+i].rgb;
+    int i;
+
+    // Initiate line_buffer with values
+    for(i = 0; i < size; i++){
+        for(int j=0; j<W; j++){
+            line_buffer[j].rgb += imageIn->data[W*i+j].rgb;
         }
     }
     // Start edge
-    for(int senterY = 0; senterY <= size; senterY++) {
+    for(i = 0; i <= size; i++) {
+        end_i++;
         // first and last line considered  by the computation of the pixel in the line senterY
-        endy = senterY+size;
-        starty = 0;
-        for(int i=0; i<W; i++) {
-            line_buffer[i].rgb += imageIn->data[W*endy+i].rgb;
+        for(int j=0; j<W; j++) {
+            line_buffer[j].rgb += imageIn->data[W*end_i+j].rgb;
         }
-        horizontalAvg(imageOut, line_buffer, rec, W, starty, endy, senterY, size);
+        horizontalAvg(imageOut, line_buffer, rec, W, start_i, end_i, i, size);
     }
     // Middle part
-    for(int senterY = size+1; senterY < H-size; senterY++) {
-        starty = senterY-size;
-        endy = senterY+size;
-        for(int i=0; i<W; i++) {
-            line_buffer[i].rgb+=imageIn->data[W*endy+i].rgb-imageIn->data[W*(starty-1)+i].rgb;
+    for(; i < H-size; i++) {
+        end_i++;
+        for(int j=0; j<W; j++) {
+            line_buffer[j].rgb+=imageIn->data[W*end_i+j].rgb-imageIn->data[W*start_i+j].rgb;
         }
-        horizontalAvg(imageOut, line_buffer, rec, W, starty, endy, senterY, size);
+        start_i++;
+        horizontalAvg(imageOut, line_buffer, rec, W, start_i, end_i, i, size);
     }
     // End edge
-    endy = H-1;
-    for(int senterY = H-size; senterY < H; senterY++) {
-        starty = senterY-size;
-        for(int i=0; i<W; i++) {
-            line_buffer[i].rgb -= imageIn->data[W*(starty-1)+i].rgb;
+    for(; i < H; i++) {
+        for(int j=0; j<W; j++) {
+            line_buffer[j].rgb -= imageIn->data[W*start_i+j].rgb;
         }
-        horizontalAvg(imageOut, line_buffer, rec, W, starty, endy, senterY, size);
+        start_i++;
+        horizontalAvg(imageOut, line_buffer, rec, W, start_i, end_i, i, size);
     }
 }
 

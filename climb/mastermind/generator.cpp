@@ -3,7 +3,7 @@
 #include <iostream>
 #include <time.h>
 
-#define SIZE 20000000 // Approx 20 MB
+#define SIZE 5000000 // Approx 10 MB
 
 using namespace std;
 

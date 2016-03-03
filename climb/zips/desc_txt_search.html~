@@ -1,0 +1,12 @@
+<h2>Text Search</h2>
+<p>Find words in a text. In this problem you are going to count the number of occurences of different words i a text file (still at stdin). Letter case should not be differentiated, and punctuation ignored. As an example, if one of the search words is "frank" and the text "My name is Frank, Fraaaank! #fRaNk #frankistheman" the count is 2.</p>
+
+
+
+<h3>Input</h3>
+
+<p>On the first line are the words to be searched. Next line is the beginning of the text.</p>
+
+<h3>Output</h3>
+
+<p>The number of occurrences in the same order. Ex:<br>2 34 5453 4</p>

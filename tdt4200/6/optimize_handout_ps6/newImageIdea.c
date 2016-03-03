@@ -14,8 +14,7 @@
 
 typedef float v4f __attribute__ ((vector_size (16)));
 typedef struct {
-    v4f rg;
-    v4f b;
+    v4f rgb;
 } AccuratePixel;
 
 typedef struct {
@@ -28,25 +27,19 @@ AccuratePixel *line_buffer;
 // Convert ppm to high precision format.
 AccurateImage *convertImageToNewFormat(PPMImage *image)
 {
-    if ( (image->x * image->y)%2 != 0) {
-        printf("NOT div 2 ERROR\n");
-    }
     // Make a copy
     AccurateImage *imageAccurate;
     imageAccurate = (AccurateImage *)malloc(sizeof(AccurateImage));
 
-    imageAccurate->data = (AccuratePixel*)malloc(sizeof(AccuratePixel) * (image->x*image->y)/2);
-
-    for(int i = 0; i < (image->x * image->y) / 2; i+=2) {
-        v4f rg = {(float) image->data[i].red, 
+    posix_memalign((void *)&(imageAccurate->data), 
+                sizeof(v4f), 
+                image->x * image->y * sizeof(AccuratePixel));
+    for(int i = 0; i < image->x * image->y; i++) {
+        v4f rgb = {(float) image->data[i].red, 
             (float) image->data[i].green, 
-            (float) image->data[i+1].red, 
-            (float) image->data[i+1].green};
-        imageAccurate->data[i].rg = rg;
-        v4f b = {(float) image->data[i].blue, 
-            (float) image->data[i+1].blue,
-            0, 0};
-        imageAccurate->data[i].b = b;
+            (float) image->data[i].blue, 
+            0};
+        imageAccurate->data[i].rgb = rgb;
     }
     imageAccurate->x = image->x;
     imageAccurate->y = image->y;
@@ -58,9 +51,9 @@ AccurateImage *createEmptyImage(PPMImage *image)
 {
     AccurateImage *imageAccurate;
     imageAccurate = (AccurateImage *)malloc(sizeof(AccurateImage));
-
-    imageAccurate->data = (AccuratePixel*)malloc(sizeof(AccuratePixel) * (image->x*image->y)/2);
-
+    posix_memalign((void *)&(imageAccurate->data), 
+                sizeof(v4f), 
+                image->x * image->y * sizeof(AccuratePixel));
     imageAccurate->x = image->x;
     imageAccurate->y = image->y;
 
@@ -74,48 +67,40 @@ void freeImage(AccurateImage *image)
     free(image);
 }
 
-void horizontalAvg(AccurateImage *imageOut, AccuratePixel *line_buffer, float rec, int W, int starty, int endy, int senterY, int size)
+void horizontalAvg(AccurateImage *imageOut, AccuratePixel *line_buffer, float rec, int W, int start_i, int end_i, int i, int size)
 {
+    v4f sum_rgb = {0, 0, 0, 0};
+    int j;
+    int start_j = 0;
+    int end_j = size - 1;
 
-    v4f sum_rg = {0, 0, 0, 0};
-    v4f sum_b = {0, 0, 0, 0};
-    // Initialization
-    for (int x=0; x < size; x+=2){
-        sum_rg += line_buffer[x].rg;
-        sum_b += line_buffer[x].b;
+    // Initiate with values
+    for (j=0; j < size; j++){
+        sum_rgb += line_buffer[j].rgb;
     }
-
     // Start edge
-    for(int i=0; i<=size; i+=2)
+    for(j=0; j<=size; j++)
     {
-        int endx = i+size;
-        int startx = 0;
-        sum_rg +=line_buffer[endx].rg;
-        sum_b +=line_buffer[endx].b;
-        rec = 1.0 / ((endx+1)*(endy-starty+1));
-        imageOut->data[W * senterY + i].rg = sum_rg * rec;
-        imageOut->data[W * senterY + i].b = sum_b * rec;
+        end_j++;
+        sum_rgb +=line_buffer[end_j].rgb;
+        rec = 1.0 / ((end_j+1)*(end_i-start_i+1));
+        imageOut->data[W*i + j].rgb = sum_rgb * rec;
     }
     // Middle part
-    for(int i=size+1; i<W-size; i+=2)
+    for(;j<W-size; j++)
     {
-        int startx = i-size;
-        int endx = i+size;
-        sum_rg += (line_buffer[endx].rg-line_buffer[startx-1].rg);
-        sum_b += (line_buffer[endx].b-line_buffer[startx-1].b);
-        imageOut->data[W * senterY + i].rg = sum_rg * rec;
-        imageOut->data[W * senterY + i].b = sum_b * rec;
+        start_j++;
+        end_j++;
+        sum_rgb += line_buffer[end_j].rgb-line_buffer[start_j-1].rgb;
+        imageOut->data[W*i + j].rgb = sum_rgb * rec;
     }
     // End edge
-    for(int i=W-size; i<W; i+=2)
+    for(;j<W; j++)
     {
-        int startx = i-size;
-        int endx = W-1;
-        sum_rg -= line_buffer[startx-1].rg;
-        sum_b -= line_buffer[startx-1].b;
-        rec = 1.0 / ((endx-startx+1)*(endy-starty+1));
-        imageOut->data[W * senterY + i].rg = sum_rg * rec;
-        imageOut->data[W * senterY + i].b = sum_b * rec;
+        start_j++;
+        sum_rgb -= line_buffer[start_j-1].rgb;
+        rec = 1.0 / ((end_j-start_j+1)*(end_i-start_i+1));
+        imageOut->data[W*i + j].rgb = sum_rgb * rec;
     }
 }
 
@@ -124,57 +109,48 @@ void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, in
 {
     float rec = 1.0 / (size * 2 + 1);
 
-
     int W = imageIn->x;
     int H = imageIn->y;
 
-    int hs = size/2;
-    int hw = W/2;
-    int hh = H/2;
-    // Line buffer for the vertical sums
-    
+    // Reset the line_buffer
     memset(line_buffer, 0, W * sizeof(AccuratePixel));
 
-    int starty;
-    int endy;
+    int start_i = 0;
+    int end_i = size - 1;
 
-    // Some initialization
-    for(int line_y=0; line_y < hs; line_y+=2){
-        for(int i=0; i<hw; i+=2){
-            line_buffer[i].rg += imageIn->data[hw*line_y+i].rg;
-            line_buffer[i].b += imageIn->data[hw*line_y+i].b;
+    int i;
+
+    // Initiate line_buffer with values
+    for(i = 0; i < size; i++){
+        for(int j=0; j<W; j++){
+            line_buffer[j].rgb += imageIn->data[W*i+j].rgb;
         }
     }
     // Start edge
-    for(int senterY = 0; senterY <= hs; senterY+=2) {
+    for(i = 0; i <= size; i++) {
+        end_i++;
         // first and last line considered  by the computation of the pixel in the line senterY
-        endy = senterY+hs;
-        starty = 0;
-        for(int i=0; i<hw; i++) {
-            line_buffer[i].rg += imageIn->data[hw*endy+i].rg;
-            line_buffer[i].b += imageIn->data[hw*endy+i].b;
+        for(int j=0; j<W; j++) {
+            line_buffer[j].rgb += imageIn->data[W*end_i+j].rgb;
         }
-        horizontalAvg(imageOut, line_buffer, rec, hw, starty, endy, senterY, hs);
+        horizontalAvg(imageOut, line_buffer, rec, W, start_i, end_i, i, size);
     }
     // Middle part
-    for(int senterY = size+1; senterY < hh-hs; senterY+=2) {
-        starty = senterY-hs;
-        endy = senterY+hs;
-        for(int i=0; i<hw; i++) {
-            line_buffer[i].rg+=imageIn->data[hw*endy+i].rg-imageIn->data[hw*(starty-1)+i].rg;
-            line_buffer[i].b+=imageIn->data[hw*endy+i].b-imageIn->data[hw*(starty-1)+i].b;
+    for(; i < H-size; i++) {
+        end_i++;
+        for(int j=0; j<W; j++) {
+            line_buffer[j].rgb+=imageIn->data[W*end_i+j].rgb-imageIn->data[W*start_i+j].rgb;
         }
-        horizontalAvg(imageOut, line_buffer, rec, hw, starty, endy, senterY, hs);
+        start_i++;
+        horizontalAvg(imageOut, line_buffer, rec, W, start_i, end_i, i, size);
     }
     // End edge
-    endy = H-1;
-    for(int senterY = hh-hs; senterY < hh; senterY+=2) {
-        starty = senterY-hs;
-        for(int i=0; i<hw; i++) {
-            line_buffer[i].rg -= imageIn->data[hw*(starty-1)+i].rg;
-            line_buffer[i].b -= imageIn->data[hw*(starty-1)+i].b;
+    for(; i < H; i++) {
+        for(int j=0; j<W; j++) {
+            line_buffer[j].rgb -= imageIn->data[W*start_i+j].rgb;
         }
-        horizontalAvg(imageOut, line_buffer, rec, hw, starty, endy, senterY, hs);
+        start_i++;
+        horizontalAvg(imageOut, line_buffer, rec, W, start_i, end_i, i, size);
     }
 }
 
@@ -184,16 +160,12 @@ void performNewIdeaFinalization(AccurateImage *imageInSmall, AccurateImage *imag
 {
     imageOut->x = imageInSmall->x;
     imageOut->y = imageInSmall->y;
-    for(int i = 0; i < imageInSmall->x * imageInSmall->y/2; i+=2)
+    for(int i = 0; i < imageInSmall->x * imageInSmall->y; i++)
     {
-        v4f rg_values = imageInLarge->data[i].rg - imageInSmall->data[i].rg;
-        v4f b_values = imageInLarge->data[i].b - imageInSmall->data[i].b;
-        imageOut->data[i].red = (int) rg_values[0];
-        imageOut->data[i].green = (int) rg_values[1];
-        imageOut->data[i].blue = (int) b_values[0];
-        imageOut->data[i+1].red = (int) rg_values[2];
-        imageOut->data[i+1].green = (int) rg_values[3];
-        imageOut->data[i+1].blue = (int) b_values[1];
+        v4f values = imageInLarge->data[i].rgb - imageInSmall->data[i].rgb;
+        imageOut->data[i].red = (int) values[0];
+        imageOut->data[i].green = (int) values[1];
+        imageOut->data[i].blue = (int) values[2];
     }
     if(argc > 1) {
         if (size == 0)
@@ -228,9 +200,10 @@ int main(int argc, char** argv)
     } else {
         image = readStreamPPM(stdin);
     }
-
-    line_buffer = (AccuratePixel*)malloc(sizeof(AccuratePixel)*image->x*image->y/2);
     
+    posix_memalign((void *)&(line_buffer), 
+                sizeof(v4f), 
+                image->x * sizeof(AccuratePixel));
 
     AccurateImage *imageUnchanged = convertImageToNewFormat(image); // save the unchanged image from input image
     AccurateImage *imageBuffer = createEmptyImage(image);

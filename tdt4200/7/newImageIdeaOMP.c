@@ -1,35 +1,45 @@
+
+#define _POSIX_C_SOURCE 200809L
+
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <omp.h>
+
 #include "ppm.h"
 
 
 // Image from:
 // http://7-themes.com/6971875-funny-flowers-pictures.html
 
-
+typedef float v4f __attribute__ ((vector_size (16)));
 typedef struct {
-    float red,green,blue;
+    v4f rgb;
 } AccuratePixel;
 
 typedef struct {
     int x, y;
-    AccuratePixel *data;
+    AccuratePixel *data; // TODO: this might require some changes for a SIMD version too.
 } AccurateImage;
 
+AccuratePixel *line_buffer;
+
 // Convert ppm to high precision format.
-AccurateImage *convertImageToNewFormat(PPMImage *image) {
+AccurateImage *convertImageToNewFormat(PPMImage *image)
+{
     // Make a copy
     AccurateImage *imageAccurate;
     imageAccurate = (AccurateImage *)malloc(sizeof(AccurateImage));
-    imageAccurate->data = (AccuratePixel*)malloc(image->x * image->y * sizeof(AccuratePixel));
-#pragma omp parallel for
+
+    posix_memalign((void *)&(imageAccurate->data), 
+                sizeof(v4f), 
+                image->x * image->y * sizeof(AccuratePixel));
     for(int i = 0; i < image->x * image->y; i++) {
-        imageAccurate->data[i].red   = (float) image->data[i].red;
-        imageAccurate->data[i].green = (float) image->data[i].green;
-        imageAccurate->data[i].blue  = (float) image->data[i].blue;
+        v4f rgb = {(float) image->data[i].red, 
+            (float) image->data[i].green, 
+            (float) image->data[i].blue, 
+            0};
+        imageAccurate->data[i].rgb = rgb;
     }
     imageAccurate->x = image->x;
     imageAccurate->y = image->y;
@@ -41,7 +51,9 @@ AccurateImage *createEmptyImage(PPMImage *image)
 {
     AccurateImage *imageAccurate;
     imageAccurate = (AccurateImage *)malloc(sizeof(AccurateImage));
-    imageAccurate->data = (AccuratePixel*)malloc(image->x * image->y * sizeof(AccuratePixel));
+    posix_memalign((void *)&(imageAccurate->data), 
+                sizeof(v4f), 
+                image->x * image->y * sizeof(AccuratePixel));
     imageAccurate->x = image->x;
     imageAccurate->y = image->y;
 
@@ -55,140 +67,119 @@ void freeImage(AccurateImage *image)
     free(image);
 }
 
-
-void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn,int size)
+void horizontalAvg(AccurateImage *imageOut, AccuratePixel *line_buffer, float rec, int W, int start_i, int end_i, int i, int size)
 {
-    int W = imageIn->x;
-    int H = imageIn->y;
-    int each = H/4;
+    v4f sum_rgb = {0, 0, 0, 0};
+    int j;
+    int start_j = 0;
+    int end_j = size - 1;
 
-#pragma omp parallel //num_threads(4)
+    // Initiate with values
+    for (j=0; j < size; j++){
+        sum_rgb += line_buffer[j].rgb;
+    }
+    // Start edge
+    for(j=0; j<=size; j++)
     {
-        float sum_red = 0;
-        float sum_blue = 0;
-        float sum_green = 0;
-        float rec = 1.0 / (2*size + 1);
-
-        // line buffer that will save the sum of some pixel in the column
-        AccuratePixel *line_buffer = (AccuratePixel*) malloc(W*sizeof(AccuratePixel));
-        memset(line_buffer,0,W*sizeof(AccuratePixel));
-
-#pragma omp for
-        for(int senterY = 0; senterY < H; senterY++) {
-            if (senterY == 0) {
-                for(int y=0; y < size; y++) {
-                    for(int i=0; i<W; i++){
-                        line_buffer[i].blue+=imageIn->data[W*y+i].blue;
-                        line_buffer[i].red+=imageIn->data[W*y+i].red;
-                        line_buffer[i].green+=imageIn->data[W*y+i].green;
-                    }
-                }
-            }
-            if (senterY == each || senterY == 2*each || senterY == 3*each) {
-                for(int y=senterY-size-1; y < senterY+size; y++) {
-                    for(int i=0; i<W; i++){
-                        line_buffer[i].blue+=imageIn->data[W*y+i].blue;
-                        line_buffer[i].red+=imageIn->data[W*y+i].red;
-                        line_buffer[i].green+=imageIn->data[W*y+i].green;
-                    }
-                }
-            }
-
-            int starty = senterY-size;
-            int endy = senterY+size;
-
-            if (starty <=0) {
-                starty = 0;
-                for(int i=0; i<W; i++){
-                    // add the next pixel of the next line in the column x
-                    line_buffer[i].blue+=imageIn->data[W*endy+i].blue;
-                    line_buffer[i].red+=imageIn->data[W*endy+i].red;
-                    line_buffer[i].green+=imageIn->data[W*endy+i].green;
-                }
-            }
-
-            else if (endy >= H ) {
-                // for the last lines, we just need to subtract the first added line
-                endy = H-1;
-                for(int i=0; i<W; i++){
-                    line_buffer[i].blue-=imageIn->data[W*(starty-1)+i].blue;
-                    line_buffer[i].red-=imageIn->data[W*(starty-1)+i].red;
-                    line_buffer[i].green-=imageIn->data[W*(starty-1)+i].green;
-                }
-            } else {
-                // general case
-                // add the next line and remove the first added line
-                for(int i=0; i<W; i++){
-                    line_buffer[i].blue+=imageIn->data[W*endy+i].blue-imageIn->data[W*(starty-1)+i].blue;
-                    line_buffer[i].red+=imageIn->data[W*endy+i].red-imageIn->data[W*(starty-1)+i].red;
-                    line_buffer[i].green+=imageIn->data[W*endy+i].green-imageIn->data[W*(starty-1)+i].green;
-                }
-            }
-
-            sum_green = 0;
-            sum_red = 0;
-            sum_blue = 0;
-            for(int senterX = 0; senterX < W; senterX++) {
-
-                int startx = senterX-size;
-                int endx = senterX+size;
-
-                if (startx <=0){
-                    startx = 0;
-                    if(senterX==0){
-                        for (int x=startx; x < endx; x++){
-                            sum_red += line_buffer[x].red;
-                            sum_green += line_buffer[x].green;
-                            sum_blue += line_buffer[x].blue;
-                        }
-                    }
-                    sum_red +=line_buffer[endx].red;
-                    sum_green +=line_buffer[endx].green;
-                    sum_blue +=line_buffer[endx].blue;
-                    rec = 1.0/((endx+1)*(endy-starty+1));
-                }else if (endx >= W){
-                    endx = W-1;
-                    sum_red -=line_buffer[startx-1].red;
-                    sum_green -=line_buffer[startx-1].green;
-                    sum_blue -=line_buffer[startx-1].blue;
-                    rec = 1.0/ ((W-startx)*(endy-starty+1));
-                }else{
-                    sum_red += (line_buffer[endx].red-line_buffer[startx-1].red);
-                    sum_green += (line_buffer[endx].green-line_buffer[startx-1].green);
-                    sum_blue += (line_buffer[endx].blue-line_buffer[startx-1].blue);
-                }
-                imageOut->data[senterY*W + senterX].red = sum_red * rec;
-                imageOut->data[senterY*W + senterX].green = sum_green * rec;
-                imageOut->data[senterY*W + senterX].blue = sum_blue * rec;
-            }
-        }
-        free(line_buffer);
+        end_j++;
+        sum_rgb +=line_buffer[end_j].rgb;
+        rec = 1.0 / ((end_j+1)*(end_i-start_i+1));
+        imageOut->data[W*i + j].rgb = sum_rgb * rec;
+    }
+    // Middle part
+    for(;j<W-size; j++)
+    {
+        start_j++;
+        end_j++;
+        sum_rgb += line_buffer[end_j].rgb-line_buffer[start_j-1].rgb;
+        imageOut->data[W*i + j].rgb = sum_rgb * rec;
+    }
+    // End edge
+    for(;j<W; j++)
+    {
+        start_j++;
+        sum_rgb -= line_buffer[start_j-1].rgb;
+        rec = 1.0 / ((end_j-start_j+1)*(end_i-start_i+1));
+        imageOut->data[W*i + j].rgb = sum_rgb * rec;
     }
 }
 
+// Perform the new idea:
+void performNewIdeaIteration(AccurateImage *imageOut, AccurateImage *imageIn, int size)
+{
+    float rec = 1.0 / (size * 2 + 1);
+
+    int W = imageIn->x;
+    int H = imageIn->y;
+
+    // Reset the line_buffer
+    memset(line_buffer, 0, W * sizeof(AccuratePixel));
+
+    int start_i = 0;
+    int end_i = size - 1;
+
+    int i;
+
+    // Initiate line_buffer with values
+    for(i = 0; i < size; i++){
+        for(int j=0; j<W; j++){
+            line_buffer[j].rgb += imageIn->data[W*i+j].rgb;
+        }
+    }
+    // Start edge
+    for(i = 0; i <= size; i++) {
+        end_i++;
+        // first and last line considered  by the computation of the pixel in the line senterY
+        for(int j=0; j<W; j++) {
+            line_buffer[j].rgb += imageIn->data[W*end_i+j].rgb;
+        }
+        horizontalAvg(imageOut, line_buffer, rec, W, start_i, end_i, i, size);
+    }
+    // Middle part
+    for(; i < H-size; i++) {
+        end_i++;
+        for(int j=0; j<W; j++) {
+            line_buffer[j].rgb+=imageIn->data[W*end_i+j].rgb-imageIn->data[W*start_i+j].rgb;
+        }
+        start_i++;
+        horizontalAvg(imageOut, line_buffer, rec, W, start_i, end_i, i, size);
+    }
+    // End edge
+    for(; i < H; i++) {
+        for(int j=0; j<W; j++) {
+            line_buffer[j].rgb -= imageIn->data[W*start_i+j].rgb;
+        }
+        start_i++;
+        horizontalAvg(imageOut, line_buffer, rec, W, start_i, end_i, i, size);
+    }
+}
+
+
 // Perform the final step, and save it as a ppm in imageOut
-void performNewIdeaFinalization(AccurateImage *imageInSmall, AccurateImage *imageInLarge, PPMImage *imageOut, char *title, int argc)
+void performNewIdeaFinalization(AccurateImage *imageInSmall, AccurateImage *imageInLarge, PPMImage *imageOut, int argc, int size)
 {
     imageOut->x = imageInSmall->x;
     imageOut->y = imageInSmall->y;
-#pragma omp for schedule(static)
-    for(int i=0; i<imageInSmall->x * imageInSmall->y; i+=1)
+    for(int i = 0; i < imageInSmall->x * imageInSmall->y; i++)
     {
-        float value = imageInLarge->data[i].red - imageInSmall->data[i].red;
-        imageOut->data[i].red = value;
-        value = imageInLarge->data[i].green - imageInSmall->data[i].green;
-        imageOut->data[i].green = value;
-        value = imageInLarge->data[i].blue - imageInSmall->data[i].blue;
-        imageOut->data[i].blue = value;
+        v4f values = imageInLarge->data[i].rgb - imageInSmall->data[i].rgb;
+        imageOut->data[i].red = (int) values[0];
+        imageOut->data[i].green = (int) values[1];
+        imageOut->data[i].blue = (int) values[2];
     }
-    if (argc > 1) {
-        writePPM(title, imageOut);
+    if(argc > 1) {
+        if (size == 0)
+            writePPM("flower_tiny.ppm", imageOut);
+        else if (size == 1)
+            writePPM("flower_small.ppm", imageOut);
+        else
+            writePPM("flower_medium.ppm", imageOut);
     } else {
         writeStreamPPM(stdout, imageOut);
     }
 }
 
-void fiveIterations(AccurateImage *imageNew, AccurateImage *imageUnchanged, AccurateImage *imageBuffer, int size)
+void process(AccurateImage *imageNew, AccurateImage *imageUnchanged, AccurateImage *imageBuffer, int size)
 {
     performNewIdeaIteration(imageNew, imageUnchanged, size);
     performNewIdeaIteration(imageBuffer, imageNew, size);
@@ -198,15 +189,21 @@ void fiveIterations(AccurateImage *imageNew, AccurateImage *imageUnchanged, Accu
 }
 
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
 
     PPMImage *image;
+    //AccuratePixel *line_buffer;
 
     if(argc > 1) {
         image = readPPM("flower.ppm");
     } else {
         image = readStreamPPM(stdin);
     }
+    
+    posix_memalign((void *)&(line_buffer), 
+                sizeof(v4f), 
+                image->x * sizeof(AccuratePixel));
 
     AccurateImage *imageUnchanged = convertImageToNewFormat(image); // save the unchanged image from input image
     AccurateImage *imageBuffer = createEmptyImage(image);
@@ -218,25 +215,26 @@ int main(int argc, char** argv) {
     imageOut->data = (PPMPixel*)malloc(image->x * image->y * sizeof(PPMPixel));
 
     // Process the tiny case:
-    fiveIterations(imageSmall, imageUnchanged, imageBuffer, 2);
+    process(imageSmall, imageUnchanged, imageBuffer, 2);
 
     // Process the small case:
-    fiveIterations(imageBig, imageUnchanged, imageBuffer, 3);
+    process(imageBig, imageUnchanged, imageBuffer, 3);
 
     // save tiny case result
-    performNewIdeaFinalization(imageSmall,  imageBig, imageOut, "flower_tiny.ppm", argc);
+    performNewIdeaFinalization(imageSmall, imageBig, imageOut, argc, 0);
 
     // Process the medium case:
-    fiveIterations(imageSmall, imageUnchanged, imageBuffer, 5);
+    process(imageSmall, imageUnchanged, imageBuffer, 5);
 
     // save small case
-    performNewIdeaFinalization(imageBig,  imageSmall,imageOut, "flower_small.ppm", argc);
+    performNewIdeaFinalization(imageBig, imageSmall, imageOut, argc, 1);
 
     // process the large case
-    fiveIterations(imageBig, imageUnchanged, imageBuffer, 8);
+    process(imageBig, imageUnchanged, imageBuffer, 8);
 
     // save the medium case
-    performNewIdeaFinalization(imageSmall,  imageBig, imageOut, "flower_medium.ppm", argc);
+    performNewIdeaFinalization(imageSmall, imageBig, imageOut, argc, 3);
+
 
     // free all memory structures
     freeImage(imageUnchanged);
@@ -247,6 +245,7 @@ int main(int argc, char** argv) {
     free(imageOut);
     free(image->data);
     free(image);
+    free(line_buffer);
 
     return 0;
 }

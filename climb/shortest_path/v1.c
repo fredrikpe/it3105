@@ -4,7 +4,6 @@
 #include <string.h>
 #include "omp.h"
 
-int *graph;
 int *prev;
 int last;
 
@@ -17,29 +16,77 @@ struct PQelem {
     int node;
 };
 
-struct PQelem pop() { return PQ[last--]; }
+struct AdjListNode
+{
+    int dest;
+    int weight;
+    struct AdjListNode* next;
+};
+ 
+struct AdjList
+{
+    struct AdjListNode *head;
+};
+ 
+struct Graph
+{
+    int V;
+    struct AdjList* array;
+};
+
+struct Graph *G;
+
+struct AdjListNode* newAdjListNode(int dest, int weight)
+{
+    struct AdjListNode* newNode =
+            (struct AdjListNode*) malloc(sizeof(struct AdjListNode));
+    newNode->dest = dest;
+    newNode->weight = weight;
+    newNode->next = NULL;
+    return newNode;
+}
+ 
+struct Graph* createGraph(int V)
+{
+    struct Graph* graph = (struct Graph*) malloc(sizeof(struct Graph));
+    graph->V = V;
+ 
+    graph->array = (struct AdjList*) malloc(V * sizeof(struct AdjList));
+ 
+    for (int i = 0; i < V; ++i)
+        graph->array[i].head = NULL;
+ 
+    return graph;
+}
+ 
+void addEdge(struct Graph* graph, int src, int dest, int weight)
+{
+    struct AdjListNode* newNode = newAdjListNode(dest, weight);
+    newNode->next = graph->array[src].head;
+    graph->array[src].head = newNode;
+}
+
+
+struct PQelem pop() { return PQ[--last]; }
 
 void prop_change(int nv, int node) {
     int i, op = -1, np = 0;
-    printf("last: %d\n", last);
-    for (i=0; i<=last; i++) {
-        printf("node: %d, PQ[i].node :: %d\n", node, PQ[i].node);
+    for (i=0; i<last; i++) {
+        //printf("node: %d, PQ[i].node :: %d\n", node, PQ[i].node);
         if (PQ[i].node == node) {
-            printf("asasdfkjasdkfj2");
             op = i;
-            continue;
-        } 
-        if (op != -1) { 
-            if (PQ[i].dist > nv) {
-                np = i;
-                PQ[i-1] = PQ[i];
-            } else {
-                break;
+            for (int j=i+1;j<last;j++) {
+                if (PQ[j].dist > nv) {
+                    np = j;
+                    PQ[j-1] = PQ[j];
+                } else {
+                    break;
+                }
             }
+            break;
         }
     }
     if (np) {
-        printf("KUUUUK\n");
         PQ[np].node = node;
         PQ[np].dist = nv;
     }
@@ -47,14 +94,14 @@ void prop_change(int nv, int node) {
 
 void ppq() {
     int i;
-    for (i=0;i<=last;i++) {
+    for (i=0;i<last;i++) {
         printf("node: %d, dist: %d\n", PQ[i].node, PQ[i].dist);
     }
     printf("\n");
 }
 int contains(int node) {
     int i;
-    for (i=0;i<=last;i++) {
+    for (i=0;i<last;i++) {
         if (PQ[i].node == node)
             return 1;
     }
@@ -63,7 +110,7 @@ int contains(int node) {
 
 int dist(int node) {
     int i;
-    for (i=0;i<=last;i++) {
+    for (i=0;i<last;i++) {
         if (PQ[i].node == node)
             return PQ[i].dist;
     }
@@ -78,40 +125,36 @@ void print_path(int sink) {
 }
 
 void dijkstra(int source, int sink) {
-    printf("source: %d, sink: %d\n", source, sink);
-    prop_change(0, source);                        // Distance from source to source
+    prop_change(0, source);        
 
-    while (last >= 0) {
-        ppq();
-        struct PQelem cur = pop(); // u ← vertex in Q with min dist[u]    // Source node will be selected first
-        //remove u from Q 
+    while (last) {
+        struct PQelem cur = pop(); 
         if (cur.node == sink) {
-            ppq();
             printf("s ");
             print_path(sink);
             printf("\n");
             return;
         }
-        int i, alt;
-        for (i=0; i<N; i++) { //each neighbor v of u:           // where v is still in Q.
-            if (graph[cur.node * N + i] != -1) {
-                //printf("cur.node: %d, i: %d, d(n,i): %d\n", cur.node, i, graph[cur.node*n + i]);
-                if (contains(i)) {
-                    printf("cont: %d, dist(i): %d\n", i, dist(i));
-                    alt = cur.dist + graph[cur.node*N + i];
-                    if (alt < dist(i)) {//:               // A shorter path to v has been found
-                       prop_change(alt, i);// dist[v] ← alt 
-                       prev[i] = cur.node; 
-                    }
+        int alt;
+        struct AdjListNode* pCrawl = G->array[cur.node].head;
+        while (pCrawl != NULL) { 
+            int i = pCrawl->dest;
+            if (contains(i)) {
+                alt = cur.dist + pCrawl->weight;
+                if (alt < dist(i)) {
+                   prop_change(alt, i); 
+                   prev[i] = cur.node; 
                 }
             }
+            pCrawl = pCrawl->next;
         }
     }
+    printf("NO SOLUTION\n");
 }
 
 int main()
 {
-    char buffer[4096];
+    char buffer[128];
 
     int u, v, d;
     int source, sink;
@@ -122,42 +165,27 @@ int main()
     int read;
     while ((read = getline(&line, &size, stdin)) != -1) {
         if (*line == 'p') {
-            // n
-            // number of nodes in a graph
             N = atoi(&(line[2]));
-            last = N-1;
-            graph = (int*)malloc(N*N* sizeof(int));
+            G = createGraph(N);
+        } else if (*line == 'a') {
+            sscanf(line+1, " %d %d %d ", &u, &v, &d);
+            addEdge(G, u, v, d);
+        } else if (*line == 'q') {
+            sscanf(line+1, " %d %d ", &source, &sink);
+            last = N;
             prev = (int*)malloc(N * sizeof(int));
             PQ = (struct PQelem*)malloc(N * sizeof(struct PQelem));
             for (i=0; i<N; i++) {
-                for (j=0;j<N;j++) {
-                    graph[i*j] = -1;
-                }
                 prev[i] = -1;
-                PQ[i].dist = (unsigned int) 1 << 20;
+                PQ[i].dist = 1 << 30;
                 PQ[i].node = i;
             }
-        } else if (*line == 'a') {
-            char *t = strtok(line, " ");
-            t = strtok(NULL, " ");
-            u = atoi(t);
-            t = strtok(NULL, " ");
-            v = atoi(t);
-            t = strtok(NULL, " ");
-            d = atoi(t);
-            graph[u*N + v] = d;
-        } else if (*line == 'q') {
-            char *t = strtok(line, " ");
-            t = strtok(NULL, " ");
-            source = atoi(t);
-            t = strtok(NULL, " ");
-            sink = atoi(t);
-
-            
             dijkstra(source, sink);
         }
     }
     
-    free(graph);
+    free(prev);
+    free(PQ);
+    free(G);
     return 0;
 }
