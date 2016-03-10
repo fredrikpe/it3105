@@ -1,0 +1,11 @@
+<h2>System of linear equations</h2>
+<p>In this problem you are to solve a system of linear equations on the form Ax = b. Feel free to use the framework you have from øving 6 and 7, although solving it by finding the inverse matrix is not recommended. Solve the Mega-Sudoku... as fast as you can!<br><br>Mega-Sudoku is a lot like regular sudoku, only more Mega. The board is a 16 by 16 grid of cells, where a cell can hold one of 16 different values (0-9A-G). The board is further divided in 16 boxes (4 by 4), 16 rows, and 16 columns. The goal is to fill each cell so that no two cells in a region (box, row or column) has the same value.</p>
+
+
+<h3>Input</h3>
+
+<p>First line specifies dimension of A. <br>Next follows A, then b. F.ex <br> 2 <br> 1 0<br> 0 1<br>1<br>1<br></p>
+
+<h3>Output</h3>
+
+<p>The solution, rounded to exactly two decimal places. One number on each line.</p>

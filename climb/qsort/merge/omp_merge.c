@@ -1,3 +1,13 @@
+/*
+ * Mergesort with OpenMP.
+ * 
+ * Mergesort splits in half every time so parallelizing is easy 
+ * enough. Still worse than serialized quicksort on the problem 
+ * on climb. 
+ * uses 4 cores (if available).
+ *
+ */
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,11 +32,9 @@ void merge (int *a, int n, int m) {
 void merge_sort (int *a, int n) {
     if (n < 2)
         return;
-    int i, m = n / 2;
-    #pragma omp parallel for
-    for (i=0; i<2; i++) {
-        merge_sort(a + i*m, i*n + m - 2*i*m);
-    }
+    int m = n / 2;
+    merge_sort(a, m);
+    merge_sort(a + m, n - m);
     merge(a, n, m);
 }
 
@@ -41,7 +49,6 @@ int main()
     while ((read = getline(&line, &size, stdin)) != -1) {
         if (*line == 'p') {
             p = atoi(&(line[2]));
-            //printf("%d\n", p);
         } else if (*line == 'q') {
             char *tok = strtok(line, " ");
             tok = strtok(NULL, " ");
@@ -53,11 +60,11 @@ int main()
     } 
 
 
-    /*int h = c/2;
+    int h = c/2;
     int q = h/2;
-    int x = (c-h)/2;
-
-    #pragma omp parallel for
+    
+    // Merge sort in up to 4 parallel threads.
+    #pragma omp parallel for schedule(static)
     for (j=0;j<4;j++)
     {
         if (0==j)
@@ -65,20 +72,22 @@ int main()
         if (1==j)
             merge_sort(nums + q, h - q);
         if (2==j)
-            merge_sort(nums + h, x);
+            merge_sort(nums + h, q);
         else
-            merge_sort(nums + h + x, c - h - x);
+            merge_sort(nums + h + q, c - h - q);
     }
     
-    merge(nums, h, q);
-    
-    merge(nums + h, c - h, x);
-
+    #pragma omp parallel for schedule(static)
+    for (j=0; j<2; j++) {
+	if (j == 0)        
+	    merge(nums, h, q);
+        else
+	    merge(nums + h, c - h, q);
+    }
     merge(nums, c, h);
-    */
 
-    merge_sort(nums, c);
 
+    // Printing the sorted list.
     printf("s ");
     for (j = 0; j<c; j++) {
         printf("%d ", nums[j]);
@@ -87,6 +96,5 @@ int main()
 
 
     free(nums);
-
     return 0;
 }

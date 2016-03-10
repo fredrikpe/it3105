@@ -6,9 +6,6 @@
  * on climb. 
  * uses 4 cores (if available).
  *
- *
- *
- * Author: Fredrik Ingebrigtsen
  */
 
 
@@ -67,7 +64,7 @@ int main()
     int q = h/2;
     
     // Merge sort in up to 4 parallel threads.
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for (j=0;j<4;j++)
     {
         if (0==j)
@@ -80,8 +77,13 @@ int main()
             merge_sort(nums + h + q, c - h - q);
     }
     
-    merge(nums, h, q);
-    merge(nums + h, c - h, q);
+    #pragma omp parallel for schedule(static)
+    for (j=0; j<2; j++) {
+	if (j == 0)        
+	    merge(nums, h, q);
+        else
+	    merge(nums + h, c - h, q);
+    }
     merge(nums, c, h);
 
 
