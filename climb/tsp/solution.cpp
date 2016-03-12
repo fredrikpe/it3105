@@ -9,74 +9,139 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <math.h>
+
 
 using namespace std;
 
-typedef unordered_map<int, int> arc_map;
-typedef unordered_map<int, arc_map> graph;
-//typedef uint64_t bitset64;
+struct Vertex {
+    int x;
+    int y;
+};
 
-// First permutation with n bits set to 1. 
-// n = 3 gives ...000111.
-uint64_t firstPermutation(int n)
+struct Edge {
+    int start;
+    int end;
+    double dist;
+};
+
+
+
+typedef unordered_map<int, double> arc_map;
+
+typedef vector<Vertex> VertexGraph;
+typedef unordered_map<int, arc_map> EdgeGraph;
+
+
+
+int N;
+
+double distance(const Vertex v1, const Vertex v2) // test for inline
 {
-    uint64_t fp = 0UL;
-    for (int i=0; i<n; i++) {
-        fp |= (1UL << i);
-    }
-    return fp;
+    double dx = v1.x - v2.x;
+    double dy = v1.y - v2.y;
+    return sqrt(dx*dx + dy*dy);
 }
 
-// next permutation with same num of 1's.
-// 011 -> 101 -> 110
-uint64_t nextPermutation(uint64_t prev)
+void insertSmallestEdge(const VertexGraph &graph, EdgeGraph &edge_graph, vector<int> &remaining, bool from_edge_graph)
 {
-    uint64_t t = prev | (prev - 1); // t gets v's least significant 0 bits set to 1
-    // Next set to 1 the most significant bit to change, 
-    // set to 0 the least significant ones, and add the necessary 1 bits.
-    return (t + 1) | (((~t & -~t) - 1) >> (__builtin_ctzl(prev) + 1));  
-}
-
-void heldKarp(distance_matrix, n)
-{
-    map<set<int>, int> s
-    map<uint64_t, int> first_level;
-
-    for (int k = 0; k < n; k++) {// to n do
-        if (k != root) {
-            uint64_t set_name = 1 << k;
-            first_level[set_name] = distance_matrix[0][k];  //  d1,k
-        }
-    }
-    for (int s = 3; s < n; s++) { 
-        map<uint64_t, int> current_level;
-        uint64_t current_set = firstPermutation(s);
-        uint64_t end = firstPermutation(s-1);
-        while (current_set != end) { // for all S ⊆ {1, 2, . . . , n}, |S| = s {
-            for (int k=0; k<n; k++) {
-                if (current_set & (1UL << k)) { // for all k ∈ S {
-                    bitset<64> tmp_set(current_set);
-                    cout << "Found node " << k << " in set " << tmp_set << endl;
-                   // C(S, k) = minm≠1,m≠k,m∈S [C(S − {k}, m) + dm,k ];
+    int end_node, start_node = -1;
+    int ei, si;
+    double cur_distance = 2000000; // fix
+    for (int i=0; i<remaining.size(); i++) { //auto new_node : remaining) {
+        if (from_edge_graph) {
+            for (auto node : edge_graph) {
+                double new_distance = distance(graph[node.first], graph[remaining[i]]); 
+                if (new_distance < cur_distance) {
+                    cur_distance = new_distance;
+                    start_node = node.first;
+                    end_node = remaining[i];
+                    ei = i;
                 }
             }
-
+        } else {
+            for (int j=i+1; j<remaining.size(); j++) {
+                double new_distance = distance(graph[remaining[j]], graph[remaining[i]]); 
+                if (new_distance < cur_distance) {
+                    cur_distance = new_distance;
+                    start_node = remaining[j];
+                    end_node = remaining[i];
+                    ei = i; si = j;
+                }
+            }
         }
     }
+    if (start_node == -1) cout << "ERROR: No edge found!\n";
 
-    opt = mink≠1 [C({1, 2, 3, . . . , n}, k) + dk,1]
-        return (opt)
+    if (!from_edge_graph) edge_graph[start_node] = arc_map();
+    edge_graph[end_node] = arc_map();
+
+    edge_graph[start_node].insert(make_pair(end_node, cur_distance));
+    edge_graph[end_node].insert(make_pair(start_node, cur_distance));
+
+    remaining.erase(remaining.begin() + ei);
+    if (!from_edge_graph) remaining.erase(remaining.begin() + si - 1);//, remaining.end(), end_node), remaining.end());
 }
-*/
+/*
+    edge_tree[start_node].insert(make_pair(remaining[end_node], cur_distance));
+    edge_tree[remaining[end_node]] = arc_map();
+    edge_tree[remaining[end_node]].insert(make_pair(start_node, cur_distance));
+
+    remaining.erase(remaining.begin() + end_node);//, remaining.end(), end_node), remaining.end());
+}*/
+
+void minimalSpanningTree(const VertexGraph &graph, EdgeGraph &edge_tree)
+{
+    edge_tree[0] = arc_map();
+    vector<int> remaining;
+    for (int i=1; i<N; i++) {
+        remaining.push_back(i);
+    }
+    while (edge_tree.size() < N) {
+        insertSmallestEdge(graph, edge_tree, remaining, true);
+    }
+}
+
+void oddDegree(const EdgeGraph &edge_tree, vector<int> &odd_degree) 
+{
+    for (auto node : edge_tree) {
+        if (node.second.size() % 2 == 1) { // Odd
+            odd_degree.push_back(node.first);
+        }
+    }
+}
+
+void perfectMatching(EdgeGraph &match_graph, const VertexGraph &graph, const vector<int> &odd_degree)
+{
+    vector<int> remaining;
+    for (auto n : odd_degree) {
+        remaining.push_back(n);
+    }
+    while (match_graph.size() < odd_degree.size()) {
+        insertSmallestEdge(graph, match_graph, remaining, false);
+    }
+}
+
+void combinePM_MST(EdgeGraph &com, const EdgeGraph &pm, const EdgeGraph &mst)
+{
+    for (auto node : mst) {
+        com[node.first] = node.second;
+    }
+    for (auto node : pm) {
+        for (auto arc : node.second) {
+            com[node.first].insert(arc);
+        }
+    }
+}
+
 int main()
 {
     
-    //set<int> S;
-    graph G;
+    VertexGraph G;
 
     string line;
     char opt;
-    int N, root, p, q, dist, read;
+    int root, id, x, y, read;
 
     while (getline(cin, line)) {
         stringstream ss(line);
@@ -88,35 +153,48 @@ int main()
                 ss >> N;
                 break;
             case 'v':
-                ss >> p >> q >> dist;
-                //if (g.find(p) == g.end()) {
-                //g[p] = arc_map();
-                //}
-                G[p].insert(make_pair(q, dist));
-                G[q].insert(make_pair(p, dist));
+                ss >> id >> x >> y;
+                G.push_back(Vertex{x, y});
                 break;
             case 'q':
                 ss >> root; 
+                root--; // 0 indexed
                 break;
             default:
                 break;
         }
     }
 
-    //for (int n=0; i<N; i++) {
-     //   S.insert(n);
-    //}
-    //S.erase(root);
+    EdgeGraph mst;
+    minimalSpanningTree(G, mst);
 
-    //cout << firstPermutation(3) << endl;
-    uint64_t a = 1UL << 61 | 1UL << 63 | 1UL << 62; //firstPermutation(34); //1UL << 63;
-    bitset<64> x(a);
-    cout << x << endl;
-    bitset<64> c(nextPermutation(a));
-    cout << c << endl;
+    vector<int> od;
+    oddDegree(mst, od);
 
+    EdgeGraph pm;
+    perfectMatching(pm, G, od);
 
-    //for (auto a:C) {
-     //   cout << a.second << endl;
-    //}
+    EdgeGraph com;
+    combinePM_MST(com, pm, mst);
+
+    cout << "Minimal spanning tree (size = " << mst.size() << ")\n";
+    for (auto a:mst) {
+        cout << a.first << " degree: " << a.second.size() << endl;
+    }
+    cout << "\n\nOdd degree graph (size = " << od.size() << ")\n";
+    for (auto a:od) {
+        cout << a << " ";
+    }
+    cout << "\n\nPerfect matching:\n";
+    for (auto a:pm) {
+        for (auto arc : a.second) {
+            cout << a.first << "  to  " << arc.first << "\tDist: " << arc.second;
+        }
+        cout << endl;
+    }
+    cout << "\nMultigraph H (size = " << com.size() << ")\n";
+    for (auto node : com) {
+        if (node.second.size() % 2 == 1) 
+            cout << "node: " << node.first << "degree: " << node.second.size() << "\n";
+    }
 }
