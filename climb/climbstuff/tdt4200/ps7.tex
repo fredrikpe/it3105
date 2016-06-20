@@ -1,0 +1,122 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{url}
+\usepackage{todonotes}
+\usepackage{verbatim}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{enumerate}
+\usepackage{fullpage}
+\usepackage[labelfont=bf]{caption}
+\usepackage{subcaption}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc} % alternatively latin1
+\setlength{\parindent}{0 mm}
+\setlength{\parskip}{1 em}
+
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\renewcommand{\Return}{\textbf{return }}
+\renewcommand{\ttdefault}{pcr}
+\renewcommand{\rmdefault}{ppl}
+
+\newcommand{\PROBSET}{7}
+
+\begin{document}
+
+\lstset{basicstyle=\scriptsize\ttfamily,captionpos=b,language=C++,morekeywords={complex}}
+
+{\noindent \LARGE \textbf{Problem set \PROBSET, Parallelization}}
+
+{\noindent \large TDT4200, Fall 2015}
+
+\begin{description}
+	\item[Deadline:] 12.11.2015 at 23:59. Contact course staff if you cannot meet the deadline.
+	\item[Evaluation:] ~
+		\begin{itemize}
+			\item[$\circ$] \vspace*{-1mm}5 points for a working MPI implementation
+			\item[$\circ$] 5 points for a working CUDA implementation
+			\item[$\circ$] 5 points for a working OpenMP implementation
+		\end{itemize}
+	\item[Delivery:] Use \textit{itslearning}. Deliver one .zip file, with:
+		\begin{itemize}
+			\item \emph{yourNTNUusername\_code\_ps{\PROBSET.zip}}
+				containing your modified versions of the files:
+				\begin{itemize}
+					\item \texttt{newImageIdeaOMP.c}
+					\item \texttt{newImageIdeaGPU.c}
+					\item \texttt{newImageIdeaMPI.c}
+				\end{itemize}
+				\item Do \emph{not} include any image files.
+				
+		\end{itemize}
+		The unmodified ppm.c and ppm.h files can be included.
+
+	\item[General notes:] ~\\
+		The MPI and GPU versions must compile and run on 
+		\texttt{its-015-XX.idi.ntnu.no} (XX being any of the lab machines in
+		ITS015), while the OpenMP version must compile and run in
+		\texttt{Problem\_set\_\PROBSET} in the TDT4200\_h2015 group on
+		\texttt{climb.idi.ntnu.no}.\\[2mm]
+		You should only make changes to the files indicated.
+		Do not add additional files or third party code/libraries.
+\end{description}
+
+
+\section*{Code delivery}
+%
+Problem set~\PROBSET\ starts over again with the same code as in problem sets
+three and six (PS3 and PS6). This time we focus on making parallel versions in
+different APIs, however.
+
+Start with the three handout files newImageIdea<API>.c, and make a working MPI,
+OpenMP (OMP) and CUDA (GPU) version respectively. The supplied
+\texttt{Makefile} should be used as is, without any changes.
+
+The \texttt{Makefile} creates an OpenMP executable named
+\texttt{newImageIdeaOMP} by using the makefile target. The program reads the \texttt{flower.ppm} image
+and creates three new images: \texttt{flower\_tiny.ppm},
+\texttt{flower\_small.ppm} and \texttt{flower\_medium.ppm}.
+
+Use the rule \textit{make run} to run \texttt{newImageIdeaOMP} and create the
+images. Then use the rule \textit{make check} to create the correct images, and
+count the number of pixel errors your code produces.
+
+The procedure is similar to run the MPI and CUDA versions -- with make targets
+\textit{newImageIdeaMPI}, \textit{runmpi}, \textit{newImageIdeaGPU} and \textit{rungpu}
+to build and run MPI and GPU executables. Run \textit{make check} for
+verification in all APIs.
+
+In this problem set, only a very simple MPI implementation with \textbf{exactly
+four MPI ranks} is required.
+
+As with PS3 and PS6, the code is allowed to have a few pixel errors in the
+final output in each image. This is tested with the \textit{checker} program,
+as before. A few thousand pixels with $\pm 1$ differences and a few hundred
+pixels with a larger difference is okay.
+
+\subsection*{Report}
+Your report must contain:
+%
+\begin{itemize}
+	\item A very short description on how the code is parallelized with MPI
+	\item A very short description on how the code is parallelized with OpenMP
+	\item A very short description on how the code is parallelized with CUDA
+	\item Timings of the MPI and CUDA versions with the \textit{time} command
+	\item The CMB numbers Time (s), Energy (j) and EDP (js)
+	\item Provide your CMB user name if different from the NTNU user name.
+\end{itemize}
+
+Please make the code readable. Remove debug tests and unused code to make it
+shorter. Some comments can be good as well. If your best code is slow a better
+report is advised.
+
+Additional details can be found in the recitation slides for this problem set.
+\end{document}

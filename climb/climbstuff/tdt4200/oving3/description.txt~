@@ -1,0 +1,62 @@
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+<h1>Image processing optimization.</h1>
+
+<p>&rdquo;We have just made an amazing new image processing algorithm. This will change<br />
+everything! Now we need you to optimize the code massively. The algorithm developers need a fast version on their workstations. In addition, the product department believes it will be too slow for our mainstream ARM based devices. I have already told them it you can solve it. You know the presentation to the investors is on next Monday, so get to it.&rdquo;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &ndash; Your boss</p>
+
+<p>This task is real. Solving this in a very good way may have real commercial value. For this task use the files <span style="font-family:courier new,courier,monospace;">Makefile, ppm.c <span style="font-family:arial,helvetica,sans-serif;">and</span> newImageIdea.c</span> from the <span style="font-family:courier new,courier,monospace;">img_proc_opt.zip</span> archive. You must also download the <span style="font-family:courier new,courier,monospace;">flower.ppm</span> file and include it in the same directory as the code.</p>
+
+<p><br />
+The <span style="font-family:courier new,courier,monospace;">Makefile</span> handed out with this Problem set creates an executable named <span style="font-family:courier new,courier,monospace;">newImageIdea</span>. The program reads the <span style="font-family:courier new,courier,monospace;">flower.ppm <span style="font-family:arial,helvetica,sans-serif;">image and creates 3 new images: </span>flower_tiny.ppm, flower_small.ppm <span style="font-family:arial,helvetica,sans-serif;">and</span> flower_medium.ppm</span>. Use a image program to look at the images.</p>
+
+<p><br />
+<span style="font-family:courier new,courier,monospace;">newImageIdea</span> implements a naive approach to solving the problem. The code is <em>bad</em>. Assume that someone that hardly knows programing wrote the code. You may modify the <span style="font-family:courier new,courier,monospace;">Makefile</span> if you think it helps your performance. Make sure that the<br />
+existing make newImageIdea rule still works if you do.</p>
+
+<p>Optimize the code. You are free to parallelize it using OpenMP, SIMD instructions or a combination of the two (sub 5 second performance is more than possible without parallelization).</p>
+
+<ul>
+	<li>There are several simple changes that will improve performance.</li>
+	<li>However, you should consider the following:
+	<ul>
+		<li>Caches and access patterns.</li>
+		<li>Useless code.</li>
+		<li>Branches and data layout/usage.</li>
+		<li>Compiler flags.</li>
+		<li>The amount of operations performed by your program.</li>
+	</ul>
+	</li>
+	<li>There are many different approches to better performance, and several can be combined.</li>
+	<li>Also, when working on real problems the answer can be open for interpretation.
+	<ul>
+		<li>Can you solve the problem in a different way?</li>
+		<li>How much precision is needed?</li>
+		<li>Is pixel accuracy needed?</li>
+		<li>Reusing data/math.</li>
+	</ul>
+	</li>
+	<li>You are allowed some minor pixel errors in the final output(s). Each pixel is in the range 0-255.
+	<ul>
+		<li>A few thousand pixels with +/- 1 differences is fine.</li>
+		<li>A few hundred larger differences is fine.</li>
+		<li>The included <span style="font-family:courier new,courier,monospace;">checker.c</span> program will inform you of the number of bad pixels. Use the <span style="font-family:courier new,courier,monospace;">make check</span> rule to run a pixel error check.</li>
+	</ul>
+	</li>
+	<li>You should only make changes to the files indicated. Do not not add additional files or third party code/libraries.</li>
+	<li>SIMD code is not neccesary for good performance, but can be used if wanted. There are several ways to write SIMD code. You may select any if the following methods. Some are simpler than others.
+	<ul>
+		<li>GCC vector extensions (recommended). See <span style="font-family:courier new,courier,monospace;">https://gcc.gnu.org/onlinedocs/gcc/Vector-Extensions.html</span></li>
+		<li><span style="font-family:courier new,courier,monospace;"><span style="font-family:arial,helvetica,sans-serif;">Intel intrinsics (SSE/AVX)</span></span></li>
+		<li><span style="font-family:courier new,courier,monospace;"><span style="font-family:arial,helvetica,sans-serif;">NEON Intrinsics</span></span></li>
+	</ul>
+	</li>
+</ul>
+
+<p>&nbsp;</p>
+</body>
+</html>

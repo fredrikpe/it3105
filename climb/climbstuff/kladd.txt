@@ -1,0 +1,12 @@
+
+
+
+finn primtall nr x
+pytagoreiske tripler?
+filtrer en liste
+search
+sorter
+minspanndist nah
+finn korteste vei - non euclidian?
+graphcolor
+etlrannetmed sudoku? min

@@ -1,0 +1,16 @@
+3 1 4 7 A 6 5 G C 9 2 8 E F D B
+C 2 G E D 7 3 9 1 B F 5 6 8 A 4
+8 A 6 5 B 1 F 2 D 4 E 3 G 9 C 7
+F 9 B D 4 8 C E G 6 A 7 2 5 3 1
+4 6 7 F 2 3 G 8 A D 1 C B E 9 5
+E 8 9 A C 4 D 1 F 5 7 B 3 G 6 2
+D B 2 3 6 A 9 5 E 8 G 4 F 1 7 C
+G 5 C 1 7 B E F 2 3 6 9 8 D 4 A
+1 G 8 9 F D A 7 B C 5 2 4 6 E 3
+A 7 3 C E 5 8 4 6 F D G 1 2 B 9
+2 D F 4 1 G B 6 3 E 9 A 7 C 5 8
+B E 5 6 9 C 2 3 8 7 4 1 D A F G
+6 C D 2 8 9 1 B 7 A 3 E 5 4 G F
+9 4 A 8 G F 7 D 5 1 B 6 C 3 2 E
+5 F E B 3 2 4 C 9 G 8 D A 7 1 6
+7 3 1 G 5 E 6 A 4 2 C F 9 B 8 D

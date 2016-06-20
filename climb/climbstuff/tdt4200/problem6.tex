@@ -1,0 +1,210 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{url}
+\usepackage{todonotes}
+\usepackage{verbatim}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{enumerate}
+\usepackage{fullpage}
+\usepackage[labelfont=bf]{caption}
+\usepackage{subcaption}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\renewcommand{\Return}{\textbf{return }}
+\renewcommand{\ttdefault}{pcr}
+\renewcommand{\rmdefault}{ppl}
+
+\newcommand{\PROBSET}{6}
+
+\begin{document}
+
+\lstset{basicstyle=\scriptsize\ttfamily,captionpos=b,language=C++,morekeywords={complex}}
+
+{\noindent \LARGE \textbf{Problem set \PROBSET, SIMD Vectorization}}
+
+{\noindent \large TDT4200, Fall 2015}
+
+\begin{description}
+	\item[Deadline:] 29.10.2015 at 23:59. Contact course staff if you cannot meet the deadline.
+	\item[Evaluation:] Pass/Fail
+	\item[Delivery:] Use It's Learning. Deliver exactly two files:
+		\begin{itemize}
+			\item \emph{yourNTNUusername\_ps\PROBSET.pdf}, with answers to the code questions
+			\item \emph{yourNTNUusername\_code\_ps\PROBSET.\{zip \textbar tar.gz \textbar tar\}}
+				containing your modified versions of the files:
+				\begin{itemize}
+					\item \texttt{Makefile}
+					\item \texttt{newImageIdea.c}
+				\end{itemize}
+				\item Do \emph{not} include any image files.
+				\item Deliver the files the same way as on CMB/PS3 (in a zip file), preferably the same zip file.
+				
+		\end{itemize}
+		The unmodified ppm.c and ppm.h files can be indluded.
+
+	\item[General notes:] Code must compile and run on the following systems:
+	\begin{enumerate}
+		\item \texttt{its-015-XX.idi.ntnu.no} (XX being any of the lab machines in ITS015)
+		\item \texttt{Problem\_set\_6} in the TDT4200\_h2015 group on \texttt{climb.idi.ntnu.no}. Use a web browser and make a user on the system. \emph{Please} use the same username as your NTNU username. If not make a clear note of this in the delivery. After making a user join the group \texttt{TDT4200\_h2015} before submitting solutions.
+	\end{enumerate}
+		You should only make changes to the files indicated.
+		Do not add additional files or third party code/libraries.
+\end{description}
+
+
+\section*{Part 1, Theory}
+
+\subsection*{Problem 1, General Theory}
+There are no theory questions.
+
+
+
+\section*{Part 2, Code}
+%There are 3 tasks in this assignment. Only one is required.
+There is only a single task in this assignment. This optimization task can take a \emph{long} time to solve in a good way. Fulfilling the requirement is quite easy however. There are no hard requirements on performance, but it should probably be faster than the handout code.
+\\
+\\
+\textbf{ Write short answers. Just point at the key idea/answer if possible. The staff does not have time to read long answers. \emph{Sorry.} Quality over quantity.}
+
+
+\subsection*{Problem 1, SIMD Optimization}
+\begin{quotation}
+"Your so called optimized code is still too slow! We do not want to use more than a single core on our platform however. The other teams have asked to reserve them to their tasks. Just make a SIMD (?) version, like they did in this article I found: \url{http://www.hindawi.com/journals/vlsi/2012/413747/}. %Also, the GPU still have unused time slots so you can try that if you want.
+" \\-- Your boss (the link is not helpful for this exercise)
+\end{quotation}
+\textbf{Motivation:} This task is real. It is not a toy, example or training task. Solving this in a \emph{very} good way may have real commercial value. Note: a very good version is probably 10+ times faster than the PS3 winner.
+
+You have to optimize the same code as in problem set 3 again using SIMD vectorization. 
+%You must optimize the same code as in problem set 3 again. There are 3 options that you can select:
+%\begin{itemize}
+%\item SIMD vectorization (hint: easiest option)
+%\item OpenCL
+%\item CUDA
+%\end{itemize}
+%Only \emph{one} is needed however, and the SIMD version is (probably) the easiest.
+We also hand out the 'CMB winner' code from problem set 3. Now the challenge is to improve already fast code. You can use this code as basis for your delivery. You may also use your original code from problem set 3 as basis, or make something new. If you do use the 'CMB winner' code a speedup is expected.
+\\
+
+For this task use the files \texttt{Makefile}, \texttt{ppm.c} and \texttt{newImageIdea.c} from the \texttt{optimize\_handout\_ps6.zip} archive. You must also download the \texttt{flower.ppm} file and include it in the same directory as the code.\\
+
+The \texttt{Makefile}  handed out with this Problem set creates an executable named ``\texttt{newImageIdea}''. The program reads the \texttt{flower.ppm} image and creates 3 new images: \texttt{flower\_tiny.ppm},\\ \texttt{flower\_small.ppm} and \texttt{flower\_medium.ppm}.
+Use the rule ``\texttt{make run}'' to run ``\texttt{newImageIdea}'' and create the images. Use the rule ``\texttt{make check}'' to create the correct images, and count the number of pixel errors your code produces.
+\\
+
+The \texttt{newImageIdea.c} code implements a nice approach to solving the task in problem set 3. The code is \emph{good}, but there are still room for improvements. Any parameter will enable file reading. You may modify the given \texttt{Makefile} if you think it helps your performance. Make sure that the existing ''\texttt{make newImageIdea}'' rule still works if you do.
+%This is your 3 options:
+\begin{enumerate}[a)]
+
+	\item Somehow optimize the code \emph {with} vector (SIMD) instructions, \emph {without} using MPI/OpenMP/OpenMP/MPI. Making use of vectorized code is \emph {required}. A vector version might not be much faster without several changes however. This is your only program code delivery.
+
+\begin{itemize}
+	\item If you use the 'CMB winner' code you should think about the following:
+	\begin{itemize}
+		\item Data types (GCC vector type).
+		\item Data layout/usage.
+		\item Memory alignment (see 'Lecture 18, 15 Oct by Rune')
+		\item The conclusion of 'Lecture 18'.
+	\end{itemize}
+	\item If you use your old code you should also think about the following:
+	\begin{itemize}
+		\item Caches and access patterns. You may look in the book for hints.
+		\item Branches.
+		\item The optimization part of 'Lecture 18'.
+	\end{itemize}
+	\item There are several ways to write SIMD code. You may select any of the following methods. Some are simpler than others however:
+	\begin{itemize}
+		\item GCC vector extensions (recommended)\\
+				\url{https://gcc.gnu.org/onlinedocs/gcc/Vector-Extensions.html}
+		\item Intel intrinsics (SSE/AVX)
+		\item NEON intrinsics
+	\end{itemize}
+	\item However, There are (still) many different approaches to better performance, and several can be combined.
+	\item You are again allowed to have some minor pixel errors in the final output in each image. Each pixel color is in the range of 0-255. We define pixel errors as pixels whose values differ from the images produced by the handout reference version of the code. 
+	\begin{itemize}
+		\item A few thousands pixels with $\pm 1$ differences is fine.
+		\item A few hundred pixels with a larger difference is fine.
+		\item The included \texttt{checker.c} program will inform you of the number of bad pixels. Use the ''\texttt{make check}'' rule to run a check of how many pixel errors you have. The handout code have many errors already, but you may increase the number.
+	\end{itemize}
+
+	\item The code must run on its-015-XX.idi.ntnu.no (XX being any of the lab machines in ITS015). You must report the time the program uses. If you use your own system report CPU specifications and the compiler. Just using the \texttt{time} command is acceptable. 
+	\item The code must run on the CMB website \texttt{climb.idi.ntnu.no}. It will be tested for energy efficiency, and must pass an automated test. Report the numbers \texttt{Time (s)}, 	\texttt{Energy (j)} and \texttt{EDP (js)}.
+
+\item In your report answer these questions:
+\begin{enumerate}[i)]
+	\item  State what version you used as basis for your hand-in.
+	\item  Write a short list of what optimizations you have used. Details are not needed, unless you have done something very smart.
+	\item  Write some comments on the difference between your problem set 3 code and the 'CMB winner' code.
+	%This is open questions with no given answer. It is just for reflection.
+	\item  What do you think is the current bottleneck in your vectorized code?
+	%This is open questions with no given answer. It is just for reflection.
+\end{enumerate}
+\end{itemize}
+
+
+
+
+
+
+\begin{comment}
+\item Somehow optimize/reimplemented the code \emph {with} OpenCL. You may use the original problem set 3 code as basis or the new 'CMB winner' code. Our hope is that you will get better performance than the CPU version (this is possible but untested). This is your only program code delivery.
+\begin{itemize}
+	\item Deciding what each thread is supposed to solve is the key challenge. The 'CMB winner' code probably do not map well to '1 thread = 1 pixel'. However, in the original PS3 code this was the case. You must find a balance between the serial reuse of values and brute force.
+	\item The code must run on its-015-XX.idi.ntnu.no (XX being any of the lab machines in ITS015). You must report the time the program uses. If you use your own system report CPU+GPU specifications and the compiler. Just using the \texttt{time} command is acceptable.
+	\item The code must run on the CMB website \texttt{climb.idi.ntnu.no}. It will be tested for energy efficiency,
+and must pass an automated test. Report the numbers \texttt{Time (s)}, 	\texttt{Energy (j)} and \texttt{EDP (js)}. Do \emph{not} run on CMB until you have optimized the code. Note:
+There is a timeout of less than 90 seconds. It can also take up to 2-3 minutes to get the feedback. Do not use MPI/OpenMP.
+\item You are again allowed to have some minor pixel errors in the final output in each image (see above).
+
+\item In your report answer these questions:
+\begin{enumerate}[i)]
+	\item  State what version you used as basis for your hand-in.
+	\item  Write a short list of what changes/optimizations you have performed. Details are not needed, unless you have done something very smart.
+	\item  Write some comments on the difference between your problem set 3 code and the 'CMB winner' code.
+	%This is open questions with no given answer. It is just for reflection.
+	\item  What do you think is the current bottleneck in your OpenCL code?
+	%This is open questions with no given answer. It is just for reflection.
+\end{enumerate}
+\end{itemize}
+
+\item Somehow optimize/reimplement the code \emph {with} CUDA. You may use the original problem set 3 code as basis or the new 'CMB winner' code. Our hope is that you will get better performance than the CPU version (this is possible but untested). This is your only program code delivery.
+\begin{itemize}
+	\item Deciding what each thread is supposed to solve is the key challenge. The 'CMB winner' code probably do not map well to '1 thread = 1 pixel'. However, in the original PS3 code this was the case. You must find a balance between the serial reuse of values and brute force.
+	\item The code must run on its-015-XX.idi.ntnu.no (XX being any of the lab machines in ITS015). You must report the time the program uses. If you use your own system report CPU+GPU specifications and the compiler. Just using the \texttt{time} command is acceptable.
+
+\item In your report answer these questions:
+\begin{enumerate}[i)]
+	\item  State what version you used as basis for your hand-in.
+	\item  Write a short list of what changes/optimizations you have performed. Details are not needed, unless you have done something very smart.
+	\item  Write some comments on the difference between your problem set 3 code and the 'CMB winner' code.
+	%This is open questions with no given answer. It is just for reflection.
+	\item  What do you think is the current bottleneck in your CUDA code?
+	%This is open questions with no given answer. It is just for reflection.
+\end{enumerate}
+\end{itemize}
+\end{comment}
+
+
+
+
+
+\end{enumerate}
+
+Finally, please make the code readable. Remove debug tests and unused code to make it shorter. Some comments can be good as well. If your best code is slow a better report is advised. Keep in mind that this is a very easy assignment compared to earlier assignments.
+
+
+\vspace{\baselineskip}
+\textbf{Additional details can be found in the recitation slides for this Problem set.
+The 'Lecture 18, 15 Oct by Rune' may contain some very useful information.}
+
+
+
+\end{document}

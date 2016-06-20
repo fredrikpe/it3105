@@ -1,0 +1,220 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{url}
+\usepackage{todonotes}
+\usepackage{verbatim}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{enumerate}
+\usepackage{fullpage}
+\usepackage[labelfont=bf]{caption}
+\usepackage{subcaption}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\renewcommand{\Return}{\textbf{return }}
+\renewcommand{\ttdefault}{pcr}
+\renewcommand{\rmdefault}{ppl}
+
+\newcommand{\PROBSET}{3}
+
+\begin{document}
+
+\lstset{basicstyle=\scriptsize\ttfamily,captionpos=b,language=C++,morekeywords={complex}}
+
+{\noindent \LARGE \textbf{Problem set \PROBSET, Debugging \& Optimization}}
+
+{\noindent \large TDT4200, Fall 2015}
+
+\begin{description}
+	\item[Deadline:] 24.09.2015 at 32:59. Contact course staff if you cannot meet the deadline.
+	\item[Evaluation:] Pass/Fail
+	\item[Delivery:] Use It's Learning. Deliver exactly two files:
+		\begin{itemize}
+			\item \emph{yourNTNUusername\_ps\PROBSET.pdf}, with answers to the code questions
+			\item \emph{yourNTNUusername\_code\_ps\PROBSET.\{zip \textbar tar.gz \textbar tar\}}
+				containing your modified versions of the files:
+				\begin{itemize}
+					\item \texttt{Makefile}
+					\item \texttt{newImageIdea.c}
+				\end{itemize}
+				\item Do \emph{not} include any image files.
+				\item Add only the files and not the folder to the archive.
+				
+		\end{itemize}
+		The unmodified ppm.c and ppm.h files can be indluded.
+
+	\item[General notes:] Code must compile and run on the following systems:
+	\begin{enumerate}
+		\item \texttt{its015-01.idi.ntnu.no}
+		\item \texttt{Problem\_set\_\PROBSET} in the \textit{TDT4200\_H2015} group on \url{climb.idi.ntnu.no}.
+	\end{enumerate}
+		You should only make changes to the files indicated.
+		Do not add additional files or third party code/libraries.
+\end{description}
+
+
+\section*{Part 1, Theory}
+
+\subsection*{Problem 1, General Theory}
+There are no theory questions. Spend the time on the code, you need it!
+
+
+
+\section*{Part 2, Code}
+There are two tasks in this assignment. One is debugging the other is optimization. The debugging task is quite easy, but requires some time to perform. It counts for a smaller part of this exercise. The optimization task can take a \emph{long} time to solve in a good way.
+\\
+\\
+\textbf{ Write short answers. Just point at the key problem/answer if possible. The staff does not have time to read long answers. \emph{Sorry.} Quality over quantity.}
+
+
+\subsection*{Problem 1, Debugging}
+For this task use the files \texttt{test01.c}, \texttt{test02.c} and \texttt{reverseParams.c} from the \texttt{debug\_handout\_ps3.zip} archive. 
+Note that different compilers will behave differently. Your local system might give other bugs, but this is still fine.
+
+\begin{enumerate}[a)]
+	\item Find problems with the program 'test01.c':
+	\begin{enumerate}[i)]
+		\item Compile: 'gcc -g test01.c'
+		\item Run with Valgrind: 'valgrind ./a.out'
+		\item And then try: 'valgrind $--$leak-check=full ./a.out'
+	\end{enumerate}
+	Find the bug(s). Only use \emph{one line answers} for each bug you find. 
+	\item \emph {Optional task:} Find problems with the program 'test02.c':
+	\begin{enumerate}[i)]
+		\item Compile: 'gcc -g test02.c'
+		\item Run with Valgrind: 'valgrind ./a.out'
+		\item And then try: 'valgrind $--$leak-check=exp-dhat ./a.out'
+	\end{enumerate}
+	Make sense of the output. If it is unclear try to add code that access 'mem' like 'mem[112] = 42;', and look at the new output of Valgrind. Only a short answer is needed (optional task). 
+	\item \emph {Main task:} Find problems with the program 'reverseParams.c'. This exercise consists of two parts - \emph {illustrating} strange bugs and \emph{hunting} them down. Before running and compiling a quick look at the code is advised. Read the code documentation (comments) only and make up your mind on how the program works.
+	
+	
+	\begin{enumerate}[i)]
+		\item Compile with all combinations:\\
+{\tt {gcc -g reverseParams.c \\
+gcc -g -O3 reverseParams.c \\
+gcc -g -Wall reverseParams.c\\
+gcc -g -Wall -O3 reverseParams.c\\
+gcc -g -Wall -O1 reverseParams.c}}\\
+Note that -Wall enables 'all' warning messages except the ones enabled by -Wextra.
+		\item Compile with 'gcc -g reverseParams.c' and test:\\
+{\tt {./a.out 12345\\
+./a.out 12345 qwer asd zx c\\
+./a.out 1234567890ABC qwer asd zx c\\
+./a.out 1234567890ABC "q w e r" asd\\}}
+The code really works.
+
+		\item Now try this:
+{\tt {\\
+./a.out X 1234\\
+./a.out X 12345678\\
+./a.out X 123456789\\
+./a.out X 1234567890\\
+./a.out X "" 1234567890\\
+./a.out X 1234567890 ""\\}}
+Observe the output.
+
+\item Compare:
+{\tt {\\
+./a.out "" 1234567 qwertyuiopa\\
+./a.out "" 1234567 ASDFGHJKL qwertyuiopa}}\\
+\emph {Optional task}: How do you explain this behaviour. Short answer please.
+
+\item Recompile with 'gcc -O3 -g' and again do the tests:
+{\tt {\\
+./a.out X 123456789\\
+./a.out X 1234567890\\
+./a.out X "" 1234567890\\
+./a.out X 1234567890 ""}\\
+}
+\emph {Optional task}: How did the program behave with the '-O3' flag? Short answer please.
+
+\item Try testing \emph{with} and \emph{without} Valgrind using 'gcc -g'. Note that valgrind adds its own messages '==12345== ....' to the output with the original output in between unless you redirect it to a log file:
+{\tt {\\
+./a.out X 1234567890abcdefg\\
+valgrind --log-file=val.txt ./a.out X 1234567890abcdef\\
+valgrind ./a.out X 1234567890abcdef}}\\
+
+\item Other things to try:
+{\tt {\\
+valgrind --log-file=val.txt --malloc-fill='41' ./a.out 1 2 3 4 5 }}\\
+Remember to look at the 'val.txt' text file when you use the log file.
+
+	\end{enumerate}
+	Use the \emph {illustrations} as a guide to find the bug(s). Write a \emph {point list} of bugs, errors, issues and comments. \emph {None} will find all the bugs, just try to list some. \emph {One line} answers are acceptable. Write the relevant line number at the start of each line. Example: 
+	{\tt {\\
+Line 59: "No newline at end of file". And it ends with a comment too!}}\\
+If you want you can look at this link to read why this is bad: http://stackoverflow.com/questions/72271/no-newline-at-end-of-file-compiler-warning
+
+
+
+
+\end{enumerate}
+
+\subsection*{Problem 2, Optimization}
+
+\begin{quotation}
+"We have just made an amazing new image processing algorithm. This will change everything! Now we need you to optimize the code massively. The algorithm developers need a fast version on their workstations. In addition, the product department believes it will be too slow for our mainstream ARM based devices. I have already told them it you can solve it. You know the presentation to the investors is on next Monday, so get to it." \\-- Your boss
+\end{quotation}
+This task is real. It is not a toy, example or training task. Solving this in a \emph{very} good way may have real commercial value. For this task use the files \texttt{Makefile}, \texttt{ppm.c} and \texttt{newImageIdea.c} from the \texttt{optimize\_handout\_ps3.zip} archive. You must also download the \texttt{flower.ppm} file and include it in the same directory as the code.\\
+
+The \texttt{Makefile}  handed out with this Problem set creates an executable named ``\texttt{newImageIdea}''. The program reads the \texttt{flower.ppm} image and creates 3 new images: \texttt{flower\_tiny.ppm}, \texttt{flower\_small.ppm} and \texttt{flower\_medium.ppm}. Use a image program to look at the images. 
+
+\texttt{newImageIdea} implements a naive approach to solving the problem. The code is \emph{bad}. Assume that someone that hardly knows programing wrote the code.
+\\
+\\
+You may modify the given \texttt{Makefile} if you think it helps your performance. Make sure that the existing \texttt{make newImageIdea} rule still works if you do.
+\begin{enumerate}[a)]
+
+	\item Somehow optimize the code significantly \emph {without} using MPI/OpenMP/GPU or parallelization. This is your only program code delivery.
+
+\begin{itemize}
+	\item There are several (simple) changes that will improve performance.
+	\item However, you should think about the following:
+	\begin{itemize}
+		\item Caches and access patterns. You may look in the book for hints.
+		\item Useless code.
+		\item Branches and data layout/usage.
+		\item Compiler flags.
+		\item The amount of operations performed by your program.
+	\end{itemize}
+	\item There are many different approches to better performance, and several can be combined.
+	\item Also, when working on real problems the answer can be open for interpretation: 
+	\begin{itemize}
+		\item Can you solve the problem in a different way?
+		\item How much precision is needed?
+		\item Is pixel accuracy needed?
+		\item Reusing data/math?
+	\end{itemize}
+	\item You are allowed to have some minor pixel errors in the final output(s). Each pixel color is in the range of 0-255.
+	\begin{itemize}
+		\item A few hundred $\pm 1$ differences is fine.
+		\item Less than one hundred larger differences is fine.
+		\item It might be wize to make a small program to chech for pixel errors. Visual verification can be tricky.
+	\end{itemize}
+
+\end{itemize}
+	\item The code must run on its015-XX.idi.ntnu.no (XX being any of the lab machines in ITS015).
+	\item The code must run on the CMB system \url{climb.idi.ntnu.no}. It will be tested for energy efficiency, and must pass an automated test. Do not run on CMB until you have optimized the code. Note: There is a timeout after 90 seconds.
+	\item If the output from your program is not identical to the handout code you must write this in the answer.
+	\item Analyze your implementation and report the following: The number of \texttt{sum += imageIn->data[...} operations performed by your program a single call of the 'performNewIdeaIteration' function. Use $size=2$ and $size=8$ with the \texttt{flower.ppm} image as parameters.
+\end{enumerate}
+
+Finally, if you make the program really fast you we have a bonus for you. By demonstrating your knowledge here you can \emph{skip} some selected parts in an exercise later on. Other rewards are possible as well.
+	
+
+\vspace{\baselineskip}
+\textbf{Additional details can be found in the recitation slides for this Problem set.}
+
+
+
+
+\end{document}
