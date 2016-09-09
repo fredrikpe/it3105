@@ -10,12 +10,14 @@ def a_star(succ, heur, arc_cost, start, is_goal, mode="astar"):
     distance cost funtion,                       node, node -> num,
     starting node,                               node
     is_goal function.                            node -> bool
+    mode,                                        string,
 
     """
     if mode == "astar": i = 0
     elif mode == "dfs": i = 1
     elif mode == "bfs": i = 2
     else: print "Error: Unknown mode\n(Modes: astar, dfs, bfs)"; return
+        
     agendaQ = []
     add(agendaQ, (heur(start), start), i)
     agenda = [start]
@@ -77,3 +79,4 @@ def pop(agenda, i):
         return hq.heappop(agenda)[1], agenda
     else:
         return agenda[0][1], agenda[1:]
+

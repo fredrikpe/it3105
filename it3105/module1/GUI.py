@@ -58,15 +58,25 @@ class Example(Frame):
             padx=5, sticky=E+W+S+N)
         self.r = 500.0 / self.dim[0]
         self.c = 500.0 / self.dim[1]
-        for x in range(1,self.dim[0]):
-            self.canvas.create_line(1+self.r*x, 1, 1+self.r*x, 500)
-        for x in range(1,self.dim[1]):
-            self.canvas.create_line(1, 1+self.c*x, 500, 1+self.c*x)
-        for p in self.valid_points:
-            #print p
-            self.canvas.create_rectangle(1+self.r*p[0], 501-self.c*p[1], 1+self.r*p[0]+self.r, 501-self.c*p[1]-self.c,
-                outline="#000", fill="#fff")
 
+        # Paint grid
+        for x in range(1,self.dim[0]):
+            self.canvas.create_line(1 + self.r*x, 1, 1 + self.r*x, 500)
+        for x in range(1,self.dim[1]):
+            self.canvas.create_line(1, 1 + self.c*x, 500, 1 + self.c*x)
+
+        # Paint white the valid points
+        for p in self.valid_points:
+            self.canvas.create_rectangle(1 + self.r*p[0], 501 - self.c*p[1], 
+                    1 + self.r*p[0] + self.r, 501 - self.c*p[1] - self.c,
+                    outline="#000", fill="#fff")
+
+        # Paint goal square 
+        self.canvas.create_rectangle(
+                1 + self.r*self.goal[0], 501 - self.c*self.goal[1], 
+                1 + self.r*self.goal[0] + self.r, 501 - self.c*self.goal[1] - self.c,
+                outline="#000", fill="#f00")
+        
     def paintPath(self):
         if self.p_num == len(self.paths):
             self.p_num = 0
@@ -75,12 +85,18 @@ class Example(Frame):
         r_ = r/6
         c_ = c/6
         if self.p_num:
+            # Current path
             for p in self.paths[self.p_num-1]:
-                self.canvas.create_oval(1+r*p[0]+r_, 501-c*p[1]-c_, 1+r*p[0]+r-r_, 501-c*p[1]-c+c_,
-                    fill="#a0a")
+                self.canvas.create_oval(1 + r*p[0] + r_, 501 - c*p[1] - c_,
+                                        1 + r*p[0] + r - r_,
+                                        501 - c*p[1] - c + c_,
+                                        fill="#a0a")
+        # Previously visited
         for p in self.paths[self.p_num]:
-            self.canvas.create_oval(1+r*p[0]+r_, 501-c*p[1]-c_, 1+r*p[0]+r-r_, 501-c*p[1]-c+c_,
-                fill="#ff0")
+            self.canvas.create_oval(1 + r*p[0] + r_,
+                                    501 - c*p[1] - c_, 1 + r*p[0] + r - r_,
+                                    501 - c*p[1] - c + c_,
+                                    fill="#ff0")
         self.p_num += 1
 
 def main():
