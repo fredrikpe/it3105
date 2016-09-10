@@ -14,9 +14,13 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    canvas.cpp
+    board.cpp \
+    backtracking.cpp
 
 HEADERS  += mainwindow.h \
-    canvas.h
+    board.h \
+    backtracking.h
 
 FORMS    += mainwindow.ui
+
+QMAKE_CXXFLAGS += -std=c++11

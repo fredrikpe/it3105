@@ -22,7 +22,7 @@ static const uint qt_meta_data_MainWindow[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-       1,   14, // methods
+       4,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -31,12 +31,18 @@ static const uint qt_meta_data_MainWindow[] = {
 
  // slots: signature, parameters, type, tag, flags
       17,   12,   11,   11, 0x08,
+      46,   11,   11,   11, 0x08,
+      71,   12,   11,   11, 0x08,
+     110,   11,   11,   11, 0x08,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_MainWindow[] = {
     "MainWindow\0\0arg1\0on_spinBox_valueChanged(int)\0"
+    "on_solveButton_clicked()\0"
+    "on_queensLineEdit_textChanged(QString)\0"
+    "on_nextStepButton_clicked()\0"
 };
 
 void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -46,6 +52,9 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         MainWindow *_t = static_cast<MainWindow *>(_o);
         switch (_id) {
         case 0: _t->on_spinBox_valueChanged((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 1: _t->on_solveButton_clicked(); break;
+        case 2: _t->on_queensLineEdit_textChanged((*reinterpret_cast< const QString(*)>(_a[1]))); break;
+        case 3: _t->on_nextStepButton_clicked(); break;
         default: ;
         }
     }
@@ -83,9 +92,9 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 1)
+        if (_id < 4)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 1;
+        _id -= 4;
     }
     return _id;
 }

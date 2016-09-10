@@ -3,7 +3,8 @@
 
 #include <QMainWindow>
 
-#include "canvas.h"
+#include "board.h"
+#include "backtracking.h"
 
 namespace Ui {
 class MainWindow;
@@ -17,10 +18,18 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    Canvas *canvas;
+    Board *board;
+    BackTracking *BTAlg;
+    int currentTry = 0;
 
 private slots:
     void on_spinBox_valueChanged(int arg1);
+
+    void on_solveButton_clicked();
+
+    void on_queensLineEdit_textChanged(const QString &arg1);
+
+    void on_nextStepButton_clicked();
 
 private:
     Ui::MainWindow *ui;
