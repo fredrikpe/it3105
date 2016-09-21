@@ -14,14 +14,11 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,0,1,0,0,0">
-    <item row="4" column="7">
-     <widget class="QLineEdit" name="lineEdit_5"/>
-    </item>
+   <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,0,1,0,0">
     <item row="1" column="6">
-     <widget class="QPushButton" name="pushButton_2">
+     <widget class="QPushButton" name="solveButton">
       <property name="text">
-       <string>Jump to Solution</string>
+       <string>Find Solutions</string>
       </property>
      </widget>
     </item>
@@ -32,87 +29,19 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="label_2">
-      <property name="text">
-       <string>TextLabel</string>
-      </property>
-     </widget>
-    </item>
-    <item row="4" column="0">
-     <widget class="QLineEdit" name="lineEdit_2"/>
-    </item>
-    <item row="4" column="6">
-     <widget class="QLineEdit" name="lineEdit_4"/>
-    </item>
     <item row="4" column="5">
-     <widget class="QLineEdit" name="lineEdit_3"/>
-    </item>
-    <item row="4" column="8">
-     <widget class="QLineEdit" name="lineEdit_6"/>
+     <widget class="QLineEdit" name="lineEdit_GA"/>
     </item>
     <item row="4" column="4">
-     <widget class="QLineEdit" name="lineEdit_7"/>
+     <widget class="QLineEdit" name="lineEdit_SA"/>
     </item>
     <item row="4" column="3">
-     <widget class="QLineEdit" name="lineEdit_8"/>
+     <widget class="QLineEdit" name="lineEdit_TS"/>
     </item>
     <item row="4" column="2">
-     <widget class="QLineEdit" name="lineEdit_9"/>
-    </item>
-    <item row="3" column="0">
-     <widget class="QLabel" name="label_3">
+     <widget class="QLineEdit" name="lineEdit_BT">
       <property name="text">
-       <string>TextLabel</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="2">
-     <widget class="QLabel" name="label_4">
-      <property name="text">
-       <string>TextLabel</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="3">
-     <widget class="QLabel" name="label_5">
-      <property name="text">
-       <string>TextLabel</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="4">
-     <widget class="QLabel" name="label_6">
-      <property name="text">
-       <string>TextLabel</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="5">
-     <widget class="QLabel" name="label_7">
-      <property name="text">
-       <string>TextLabel</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="6">
-     <widget class="QLabel" name="label_8">
-      <property name="text">
-       <string>TextLabel</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="7">
-     <widget class="QLabel" name="label_9">
-      <property name="text">
-       <string>TextLabel</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="8">
-     <widget class="QLabel" name="label_10">
-      <property name="text">
-       <string>TextLabel</string>
+       <string/>
       </property>
      </widget>
     </item>
@@ -143,7 +72,7 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="8" rowspan="2">
+    <item row="0" column="7" rowspan="2">
      <widget class="QGroupBox" name="groupBox">
       <property name="title">
        <string>Algorithm</string>
@@ -178,6 +107,49 @@
         </widget>
        </item>
       </layout>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="5">
+     <widget class="QLabel" name="label_6">
+      <property name="text">
+       <string>Genetic Algorithm</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="3">
+     <widget class="QLabel" name="label_4">
+      <property name="text">
+       <string>Tabu Search</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="4">
+     <widget class="QLabel" name="label_5">
+      <property name="text">
+       <string>Simulated Annealing</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="2">
+     <widget class="QLabel" name="label_3">
+      <property name="text">
+       <string>Backtracking</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <widget class="QLabel" name="label_12">
+      <property name="text">
+       <string># of Solutions
+ Time</string>
+      </property>
      </widget>
     </item>
    </layout>

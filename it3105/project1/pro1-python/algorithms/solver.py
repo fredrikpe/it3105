@@ -18,8 +18,14 @@ class Solver:
         self.selected_algorithm = self.backtracking
         self.input_length = 0
 
+        self.solutions = set()
+
     def solve(self, state):
-        return self.selected_algorithm.solve(state)
+        self.selected_algorithm.solve(state)
+        self.solutions = self.selected_algorithm.solutions
+
+    def step_solve(self, state):
+        return self.selected_algorithm.step_solve(state)
 
     def is_solution(self, queens):
         return self.is_valid(queens) and len(queens) == self.board.board_size
@@ -29,17 +35,18 @@ class Solver:
 
     def fitness(self, queens):
         if not queens:
-            return -1000
+            return 0
         if len(queens) > self.board.board_size:
-            raise Exception("Queens list longer than board size.")
+            return -1000
+            # raise Exception("Queens list longer than board size.")
 
-        # Horizontal conflict (list contains duplicates).
+        # Horizontal conflicts (list contains duplicates).
         horizontal_conflicts = len(queens) - len(set(queens))
 
-        # Diagonal conflict (x and y distance is equal).
+        # Diagonal conflicts (x and y distance is equal).
         diagonal_conflicts = 0
         for i in range(len(queens)):
-            for j in range(len(queens)):
+            for j in range(i + 1, len(queens)):
                 if i == j:
                     continue
 
@@ -81,3 +88,8 @@ class Solver:
                 queens.append(i)
         return queens
 
+    def reset_solutions(self):
+        self.solutions = []
+        self.backtracking.solutions = []
+        self.tabu_search.solutions = []
+        self.simulated_annealing.solutions = []

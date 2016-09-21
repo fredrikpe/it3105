@@ -8,15 +8,15 @@ class Backtracking:
         self.solutions = []
 
     def step_solve(self, state):
-        if not self.is_valid(state):
-            return
+        print(state)
+        if self.is_valid(state):
 
-        if self.is_solution(state):
-            return
+            if self.is_solution(state):
+                return
 
-        for child in self.generator(state):
-            yield child
-            yield from self.solve(child)
+            for child in self.generator(state):
+                yield child
+                yield from self.step_solve(child)
 
     def solve(self, state):
         if self.is_valid(state):
