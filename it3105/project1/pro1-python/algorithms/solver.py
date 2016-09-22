@@ -9,7 +9,7 @@ class Solver:
     def __init__(self, board):
         self.board = board
 
-        self.backtracking = Backtracking(self.is_valid, self.is_solution, self.generator)
+        self.backtracking = Backtracking(self.board, self.is_solution, self.generator)
 
         self.tabu_search = TabuSearch(self.initial_solution, self.fitness, self.is_solution, self.neighborhood, 100)
 
@@ -31,7 +31,9 @@ class Solver:
         return self.is_valid(queens) and len(queens) == self.board.board_size
 
     def generator(self, queens):
-        return [queens + [i] for i in range(self.board.board_size)]
+        s = set(range(self.board.board_size))
+        s.difference_update(queens)
+        return [queens + [i] for i in s]
 
     def fitness(self, queens):
         if not queens:

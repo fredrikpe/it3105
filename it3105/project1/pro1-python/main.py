@@ -1,6 +1,7 @@
 import sys
 import threading
 
+import time
 from PyQt5 import QtWidgets, QtCore, uic
 
 from algorithms.solver import Solver
@@ -46,11 +47,14 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):  #, Ui_MainWindow):
             self.board.update()
 
     def start_solver(self):
+        start_time = time.time()
         self.solver.solve(self.board.queens)
+        duration = time.time() - start_time
         self.solutions_iterator = iter(self.solver.solutions)
         print("# of sols: ", len(self.solver.solutions))
-        self.selected_lineEdit.insert(str(len(self.solver.solutions)))
-        print(self.selected_lineEdit)
+
+        self.label_2.setText(str(len(self.solver.solutions)) + ", time: " + str(duration))
+
         self.solveButton.setEnabled(True)
         self.solveButton.setText("Next Solution")
 
