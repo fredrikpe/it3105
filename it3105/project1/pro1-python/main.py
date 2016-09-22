@@ -7,14 +7,14 @@ from PyQt5 import QtWidgets, QtCore, uic
 from algorithms.solver import Solver
 from board import Board
 
-Ui_MainWindow, QtBaseClass = uic.loadUiType("main_window.ui")
+#Ui_MainWindow, QtBaseClass = uic.loadUiType("main_window.ui")
 
 
-class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):  #, Ui_MainWindow):
+class MyApp(QtWidgets.QMainWindow):  #, Ui_MainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
-        Ui_MainWindow.__init__(self)
-        self.setupUi(self)
+
+        uic.loadUi('main_window.ui', self)
 
         self.board = Board(self)
         self.solver = Solver(self.board)
@@ -53,7 +53,7 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):  #, Ui_MainWindow):
         self.solutions_iterator = iter(self.solver.solutions)
         print("# of sols: ", len(self.solver.solutions))
 
-        self.label_2.setText(str(len(self.solver.solutions)) + ", time: " + str(duration))
+        self.selected_label.setText(str(len(self.solver.solutions)) + "\n{:.2g} s".format(duration))
 
         self.solveButton.setEnabled(True)
         self.solveButton.setText("Next Solution")
@@ -90,28 +90,28 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):  #, Ui_MainWindow):
     def on_radioButton_BT_clicked(self, checked):
         if checked:
             self.solver.selected_algorithm = self.solver.backtracking
-            self.selected_lineEdit = self.lineEdit_BT
+            self.selected_label = self.label_BT
             self.update_step_iterator()
 
     @QtCore.pyqtSlot(bool)
     def on_radioButton_TS_clicked(self, checked):
         if checked:
             self.solver.selected_algorithm = self.solver.tabu_search
-            self.selected_lineEdit = self.lineEdit_TS
+            self.selected_label = self.label_TS
             self.update_step_iterator()
 
     @QtCore.pyqtSlot(bool)
     def on_radioButton_SA_clicked(self, checked):
         if checked:
             self.solver.selected_algorithm = self.solver.simulated_annealing
-            self.selected_lineEdit = self.lineEdit_SA
+            self.selected_label = self.label_SA
             self.update_step_iterator()
 
     @QtCore.pyqtSlot(bool)
     def on_radioButton_GA_clicked(self, checked):
         if checked:
             self.solver.selected_algorithm = self.solver.genetic_algorithm
-            self.selected_lineEdit = self.lineEdit_GA
+            self.selected_label = self.label_GA
             self.update_step_iterator()
 
 

@@ -19,10 +19,12 @@ class SimulatedAnnealing:
 
     def solve(self, state):
         self.start_time = time.time()
+        board_size = len(self.initial_state([0]))
+
         current_state = self.initial_state(state)
 
-        while not self.stop_condition():
-            for i, T in enumerate(self.temperatures()):
+        while not self.stop_condition(board_size):
+            for i, T in enumerate(self.temperatures(board_size)):
 
                 neighbors = self.neighborhood(current_state)
                 new_state = neighbors[random.randint(0, len(neighbors) - 1)]
@@ -51,27 +53,27 @@ class SimulatedAnnealing:
                 print(2)
                 yield current_state
 
-        print("Outside loop", i)
         yield current_state
 
     def probability(self, current_state, new_state, T):
         difference = self.fitness(current_state) - self.fitness(new_state)
         if difference < 0:
             return 1
-        return math.exp(-difference/T)
+        return math.exp(-difference / T)
 
-    def temperatures(self):
-        return [1 for i in range(100)]
-        # k = 0
-        # while k < 100:
-        #     yield 2 * len(self.initial_state([0])) * pow(0.95, k)
-        #     k += 1
+    def temperatures(self, board_size):
+        # return [1 for _ in range(2 * board_size * board_size)]
+        k = 0
+        while k < 2 * board_size * board_size:
+            yield 1 * pow(0.95, k)
+            k += 1
 
-    def stop_condition(self):
+    def stop_condition(self, board_size):
         current_time = time.time()
+
         # 5 seconds
         #print(current_time - self.start_time > 10)
-        return current_time - self.start_time > 10
+        return current_time - self.start_time > board_size * board_size / 20
 
 
 

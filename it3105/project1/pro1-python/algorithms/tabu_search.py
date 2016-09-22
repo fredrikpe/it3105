@@ -26,7 +26,11 @@ class TabuSearch:
                 if neighbor not in tabu_list and self.fitness(neighbor) > self.fitness(best_candidate):
                     best_candidate = neighbor
 
+            if not best_candidate:
+                return
+
             current = best_candidate
+
 
             if self.fitness(best_candidate) > self.fitness(current_best):
                 current_best = best_candidate
@@ -34,7 +38,7 @@ class TabuSearch:
                     self.solutions.append(current_best)
 
 
-            tabu_list.append(best_candidate)
+            tabu_list.append(current)
 
             if len(tabu_list) > self.max_tabu_size:
                 tabu_list = tabu_list[1:]
@@ -55,6 +59,9 @@ class TabuSearch:
                 if neighbor not in tabu_list and self.fitness(neighbor) > self.fitness(best_candidate):
                     best_candidate = neighbor
 
+            if not best_candidate:
+                #TODO: start over with new initial state
+                pass
             current = best_candidate
 
             if self.fitness(best_candidate) > self.fitness(current_best):

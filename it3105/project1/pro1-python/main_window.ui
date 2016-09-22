@@ -14,14 +14,16 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,0,1,0,0">
-    <item row="1" column="6">
-     <widget class="QPushButton" name="solveButton">
-      <property name="text">
-       <string>Find Solutions</string>
-      </property>
-     </widget>
-    </item>
+   <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,0,1,0,0" columnstretch="0,0,1,1,1,1,1,1">
+    <property name="leftMargin">
+     <number>20</number>
+    </property>
+    <property name="topMargin">
+     <number>20</number>
+    </property>
+    <property name="rightMargin">
+     <number>20</number>
+    </property>
     <item row="1" column="5">
      <widget class="QPushButton" name="nextStepButton">
       <property name="text">
@@ -29,19 +31,17 @@
       </property>
      </widget>
     </item>
-    <item row="4" column="5">
-     <widget class="QLineEdit" name="lineEdit_GA"/>
-    </item>
-    <item row="4" column="4">
-     <widget class="QLineEdit" name="lineEdit_SA"/>
-    </item>
-    <item row="4" column="3">
-     <widget class="QLineEdit" name="lineEdit_TS"/>
-    </item>
-    <item row="4" column="2">
-     <widget class="QLineEdit" name="lineEdit_BT">
+    <item row="1" column="6">
+     <widget class="QPushButton" name="solveButton">
       <property name="text">
-       <string/>
+       <string>Find Solutions</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="3">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Queen positions</string>
       </property>
      </widget>
     </item>
@@ -58,55 +58,11 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="3">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Queen positions</string>
-      </property>
-     </widget>
-    </item>
     <item row="0" column="0">
      <widget class="QLabel" name="label_11">
       <property name="text">
        <string>Board size</string>
       </property>
-     </widget>
-    </item>
-    <item row="0" column="7" rowspan="2">
-     <widget class="QGroupBox" name="groupBox">
-      <property name="title">
-       <string>Algorithm</string>
-      </property>
-      <layout class="QVBoxLayout" name="verticalLayout_4">
-       <item>
-        <widget class="QRadioButton" name="radioButton_BT">
-         <property name="text">
-          <string>BT</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="radioButton_TS">
-         <property name="text">
-          <string>TS</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="radioButton_SA">
-         <property name="text">
-          <string>SA</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="radioButton_GA">
-         <property name="text">
-          <string>GA</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
      </widget>
     </item>
     <item row="1" column="0">
@@ -152,6 +108,71 @@
       </property>
      </widget>
     </item>
+    <item row="4" column="5">
+     <widget class="QLabel" name="label_GA">
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="4">
+     <widget class="QLabel" name="label_SA">
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="3">
+     <widget class="QLabel" name="label_TS">
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="2">
+     <widget class="QLabel" name="label_BT">
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="7" rowspan="3">
+     <widget class="QGroupBox" name="groupBox">
+      <property name="title">
+       <string>Algorithm</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <item>
+        <widget class="QRadioButton" name="radioButton_BT">
+         <property name="text">
+          <string>BT</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="radioButton_TS">
+         <property name="text">
+          <string>TS</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="radioButton_SA">
+         <property name="text">
+          <string>SA</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="radioButton_GA">
+         <property name="text">
+          <string>GA</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -160,7 +181,7 @@
      <x>0</x>
      <y>0</y>
      <width>1025</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

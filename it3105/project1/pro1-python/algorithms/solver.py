@@ -1,5 +1,7 @@
 import random
 
+import math
+
 from algorithms.backtracking import Backtracking
 from algorithms.tabu_search import TabuSearch
 from algorithms.simulated_annealing import SimulatedAnnealing
@@ -37,20 +39,18 @@ class Solver:
 
     def fitness(self, queens):
         if not queens:
-            return 0
+            return -math.inf
         if len(queens) > self.board.board_size:
             return -1000
             # raise Exception("Queens list longer than board size.")
 
         # Horizontal conflicts (list contains duplicates).
-        horizontal_conflicts = len(queens) - len(set(queens))
+        # horizontal_conflicts = len(queens) - len(set(queens))
 
         # Diagonal conflicts (x and y distance is equal).
         diagonal_conflicts = 0
         for i in range(len(queens)):
             for j in range(i + 1, len(queens)):
-                if i == j:
-                    continue
 
                 y_dist = abs(queens[i] - queens[j])
                 x_dist = abs(i - j)
@@ -58,7 +58,7 @@ class Solver:
                 if y_dist == x_dist:
                     diagonal_conflicts += 1
 
-        return -(horizontal_conflicts + diagonal_conflicts)
+        return - diagonal_conflicts
 
     def is_valid(self, queens):
         return self.fitness(queens) == 0
