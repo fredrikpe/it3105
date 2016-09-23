@@ -7,24 +7,22 @@ from PyQt5 import QtWidgets, QtCore, uic
 from algorithms.solver import Solver
 from board import Board
 
-#Ui_MainWindow, QtBaseClass = uic.loadUiType("main_window.ui")
 
-
-class MyApp(QtWidgets.QMainWindow):  #, Ui_MainWindow):
+class MyApp(QtWidgets.QMainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
 
+        # Using .ui files - from Qt Designer
         uic.loadUi('main_window.ui', self)
 
         self.board = Board(self)
         self.solver = Solver(self.board)
 
-
         self.main_grid_layout = self.gridLayout_2  # type: QtWidgets.QGridLayout
         self.main_grid_layout.addWidget(self.board, 2, 0, 1, 7)
 
         self.step_iterator = iter([])
-        self.solutions = set()
+        self.solutions_iterator = iter([])
 
         self.radioButton_BT.click()
 
@@ -48,8 +46,17 @@ class MyApp(QtWidgets.QMainWindow):  #, Ui_MainWindow):
 
     def start_solver(self):
         start_time = time.time()
-        self.solver.solve(self.board.queens)
+        board_size = self.board.board_size
+        self.solver.find_solutions(self.board.queens)
         duration = time.time() - start_time
+
+        # Parameters changed while solving, abort
+        if board_size != self.board.board_size:
+            self.solutions_iterator = iter([])
+            self.solveButton.setEnabled(True)
+            self.solveButton.setText("Find Solutions")
+            return
+
         self.solutions_iterator = iter(self.solver.solutions)
         print("# of sols: ", len(self.solver.solutions))
 

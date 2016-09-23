@@ -3,6 +3,7 @@ import random
 import math
 
 from algorithms.backtracking import Backtracking
+from algorithms.genetic_algorithm import GeneticAlgorithm
 from algorithms.tabu_search import TabuSearch
 from algorithms.simulated_annealing import SimulatedAnnealing
 
@@ -13,17 +14,19 @@ class Solver:
 
         self.backtracking = Backtracking(self.board, self.is_solution, self.generator)
 
-        self.tabu_search = TabuSearch(self.initial_solution, self.fitness, self.is_solution, self.neighborhood, 100)
+        self.tabu_search = TabuSearch(self.initial_solution, self.fitness, self.is_solution, self.neighborhood, 10000)
 
         self.simulated_annealing = SimulatedAnnealing(self.initial_solution, self.fitness, self.neighborhood, self.is_solution)
+
+        self.genetic_algorithm = GeneticAlgorithm(self.initial_population, self.is_solution, self.fitness, self.crossover, self.mutate)
 
         self.selected_algorithm = self.backtracking
         self.input_length = 0
 
         self.solutions = set()
 
-    def solve(self, state):
-        self.selected_algorithm.solve(state)
+    def find_solutions(self, state):
+        self.selected_algorithm.find_solutions(state)
         self.solutions = self.selected_algorithm.solutions
 
     def step_solve(self, state):
@@ -42,10 +45,6 @@ class Solver:
             return -math.inf
         if len(queens) > self.board.board_size:
             return -1000
-            # raise Exception("Queens list longer than board size.")
-
-        # Horizontal conflicts (list contains duplicates).
-        # horizontal_conflicts = len(queens) - len(set(queens))
 
         # Diagonal conflicts (x and y distance is equal).
         diagonal_conflicts = 0
@@ -71,9 +70,7 @@ class Solver:
                 permutations = []
                 for j in range(i + 1, self.board.board_size):
                     new_state = [q for q in queens]
-                    tmp = new_state[i]
-                    new_state[i] = new_state[j]
-                    new_state[j] = tmp
+                    new_state[i], new_state[j] = new_state[j], new_state[i]
                     permutations.append(new_state)
                 return permutations
 
@@ -89,6 +86,29 @@ class Solver:
             if i not in queens:
                 queens.append(i)
         return queens
+
+    def initial_population(self, queens):
+        return [self.initial_solution(queens) for _ in range(self.board.board_size)]
+
+    def crossover(self, parents):
+        P = len(parents)
+        def make_offspring():
+            offspring = []
+            for i in range(self.board.board_size):
+                offspring.append(parents[random.randint(0, P - 1)][i])
+            return offspring
+        return [make_offspring() for i in range(self.board.board_size // 2)]
+
+    def mutate(self, offsprings):
+        positions = list(range(len(offsprings[0])))
+        def mutation(queens):
+            i = random.choice(positions)
+            positions.remove(i)
+            j = random.choice(positions)
+            positions.append(i)
+            queens[i], queens[j] = queens[j], queens[i]
+            return queens
+        return [mutation(o) for o in offsprings]
 
     def reset_solutions(self):
         self.solutions = []

@@ -8,7 +8,6 @@ class Backtracking:
         self.solutions = []
 
     def step_solve(self, state):
-        print(state)
         if self.is_valid(state):
 
             if self.is_solution(state):
@@ -18,22 +17,20 @@ class Backtracking:
                 yield child
                 yield from self.step_solve(child)
 
-    def solve(self, state):
+    def find_solutions(self, state):
         if self.is_valid(state):
 
             if self.is_solution(state):
                 self.solutions.append(state)
+                return
 
             for child in self.generator(state):
-                self.solve(child)
+                self.find_solutions(child)
 
-    def is_valid(self, queens):
+    @staticmethod
+    def is_valid(queens):
         L = len(queens)
         if L > 1:
-
-            # horizontal_conflicts
-            # if -len(set(queens)) + L:
-            #     return False
 
             # Diagonal conflicts (x and y distance is equal).
             y_pos = queens[-1]
@@ -42,6 +39,4 @@ class Backtracking:
                 if abs(queens[i] - y_pos) == L - 1 - i:
                     return False
 
-            # if L > self.board.board_size:
-            #     return False
         return True
