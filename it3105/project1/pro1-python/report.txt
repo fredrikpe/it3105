@@ -1,0 +1,25 @@
+Report
+
+a) Part-1	(2p)
+	
+	• A list of integers between 0 and N - 1. Each number representing the row position of each column.
+	• Minus the number of horizontal and diagonal conflicts (there are no vertical conflicts).
+
+b) Part-2	(2p)
+
+	• n = 14: 7
+	  n = 16: 85
+	  n = 18: 1752
+	  n = 20: 56347
+
+	• n = 14: 0.033 s
+	  n = 16: 0.81 s
+	  n = 18: 20 s
+	  n = 20: 12 m 30 s
+
+c) Part-3	(2p)
+
+	• 0..0
+
+	• For TS
+		– 

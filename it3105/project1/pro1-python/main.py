@@ -60,7 +60,8 @@ class MyApp(QtWidgets.QMainWindow):
         self.solutions_iterator = iter(self.solver.solutions)
         print("# of sols: ", len(self.solver.solutions))
 
-        self.selected_label.setText(str(len(self.solver.solutions)) + "\n{:.2g} s".format(duration))
+        self.selected_label.setText("N = " + str(self.board.board_size) + "\n" +
+                                    str(len(self.solver.solutions)) + "\n{:.2g} s".format(duration))
 
         self.solveButton.setEnabled(True)
         self.solveButton.setText("Next Solution")
