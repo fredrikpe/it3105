@@ -31,10 +31,27 @@
       </property>
      </widget>
     </item>
+    <item row="3" column="5">
+     <widget class="QLabel" name="label_6">
+      <property name="text">
+       <string>Genetic Algorithm</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="4">
+     <widget class="QLineEdit" name="queensLineEdit"/>
+    </item>
     <item row="1" column="6">
      <widget class="QPushButton" name="solveButton">
       <property name="text">
        <string>Find Solutions</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="label_11">
+      <property name="text">
+       <string>Board size (N)</string>
       </property>
      </widget>
     </item>
@@ -45,37 +62,13 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="4">
-     <widget class="QLineEdit" name="queensLineEdit"/>
-    </item>
     <item row="0" column="2">
      <widget class="QSpinBox" name="boardSizeSpinBox">
       <property name="minimum">
        <number>4</number>
       </property>
       <property name="maximum">
-       <number>30</number>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="0">
-     <widget class="QLabel" name="label_11">
-      <property name="text">
-       <string>Board size</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="label_2">
-      <property name="text">
-       <string>TextLabel</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="5">
-     <widget class="QLabel" name="label_6">
-      <property name="text">
-       <string>Genetic Algorithm</string>
+       <number>1000</number>
       </property>
      </widget>
     </item>
@@ -174,6 +167,27 @@
       </layout>
      </widget>
     </item>
+    <item row="0" column="6">
+     <widget class="QDoubleSpinBox" name="timeSpinBox">
+      <property name="maximum">
+       <double>10.000000000000000</double>
+      </property>
+      <property name="singleStep">
+       <double>0.500000000000000</double>
+      </property>
+      <property name="value">
+       <double>0.500000000000000</double>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="5">
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>Time constraint
+N * x seconds</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -182,7 +196,7 @@
      <x>0</x>
      <y>0</y>
      <width>1025</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>

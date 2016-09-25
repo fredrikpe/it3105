@@ -71,10 +71,18 @@ class MyApp(QtWidgets.QMainWindow):
         self.board.board_size = size
         self.on_queensLineEdit_textChanged(None)
 
+    @QtCore.pyqtSlot(float)
+    def on_timeSpinBox_valueChanged(self, x):
+        self.board.time_constraint_scalar = x
+
     @QtCore.pyqtSlot(str)
     def on_queensLineEdit_textChanged(self, text):
         if not text:
             text = self.queensLineEdit.text()
+
+        text = text[:self.board.board_size]
+        self.queensLineEdit.setText(text)
+
         self.board.queens = [int(c) for c in text]
         self.solver.input_length = len(text)
         self.reset()

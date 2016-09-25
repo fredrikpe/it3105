@@ -7,7 +7,8 @@ import time
 
 
 class SimulatedAnnealing:
-    def __init__(self, initial_solution, fitness, neighborhood, is_solution):
+    def __init__(self, initial_solution, fitness, neighborhood, is_solution, stop_condition):
+        self.stop_condition = stop_condition
         self.initial_solution = initial_solution
         self.fitness = fitness
         self.neighborhood = neighborhood
@@ -42,10 +43,15 @@ class SimulatedAnnealing:
         yield from self.solver(state, board_size)
 
     def find_solutions(self, state):
-        self.start_time = time.time()
+        start_time = time.time()
         board_size = len(self.initial_solution([0]))
 
-        while not self.stop_condition(board_size):
+        while not self.stop_condition(start_time):
+            self.solver(state, board_size)
+
+    def find_one_solution(self, state):
+        board_size = len(self.initial_solution([0]))
+        while not self.solutions:
             self.solver(state, board_size)
 
     def probability(self, current_state, new_state, T):
@@ -57,13 +63,13 @@ class SimulatedAnnealing:
     def temperatures(self, board_size):
         # return [1 for _ in range(2 * board_size * board_size)]
         k = 0
-        while k < 2 * board_size * board_size:
+        while k < board_size * board_size:
             yield 1 * pow(0.95, k)
             k += 1
 
-    def stop_condition(self, board_size):
-        current_time = time.time()
-        return current_time - self.start_time > board_size * board_size / 20
+    # def stop_condition(self, board_size):
+    #     current_time = time.time()
+    #     return current_time - self.start_time > board_size * board_size / 20
 
 
 

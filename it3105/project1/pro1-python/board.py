@@ -11,6 +11,7 @@ class Board(QtWidgets.QWidget):
         self.parent = parent
         self.queens = []
         self.board_size = board_size
+        self.time_constraint_scalar = 0.5
 
     def paintEvent(self, QPaintEvent):
         rect = QPaintEvent.rect()
@@ -33,8 +34,14 @@ class Board(QtWidgets.QWidget):
 
                 if len(self.queens) > i and self.queens[i] == j:
                     if len(self.queens) == self.board_size and self.is_valid(self.queens):
+                        if self.board_size >= 50:
+                            painter.fillRect(rect.left() + i * square_width, rect.top() + j * square_height,
+                                             square_width, square_height, QtCore.Qt.blue)
                         painter.setPen(QtCore.Qt.blue)
                     else:
+                        if self.board_size >= 50:
+                            painter.fillRect(rect.left() + i * square_width, rect.top() + j * square_height,
+                                             square_width, square_height, QtCore.Qt.red)
                         painter.setPen(QtCore.Qt.red)
 
                     painter.drawText(rect.left() + i * square_width + square_width/4,

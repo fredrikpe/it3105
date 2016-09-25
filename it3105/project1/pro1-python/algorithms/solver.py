@@ -3,6 +3,8 @@ import random
 
 import math
 
+import time
+
 from algorithms.backtracking import Backtracking
 from algorithms.genetic_algorithm import GeneticAlgorithm
 from algorithms.tabu_search import TabuSearch
@@ -15,11 +17,11 @@ class Solver:
 
         self.backtracking = Backtracking(self.board, self.is_solution, self.generator)
 
-        self.tabu_search = TabuSearch(self.initial_solution, self.fitness, self.is_solution, self.neighborhood, 10000)
+        self.tabu_search = TabuSearch(self.initial_solution, self.fitness, self.is_solution, self.neighborhood, self.stop_condition)
 
-        self.simulated_annealing = SimulatedAnnealing(self.initial_solution, self.fitness, self.neighborhood, self.is_solution)
+        self.simulated_annealing = SimulatedAnnealing(self.initial_solution, self.fitness, self.neighborhood, self.is_solution, self.stop_condition)
 
-        self.genetic_algorithm = GeneticAlgorithm(self.initial_population, self.is_solution, self.fitness)
+        self.genetic_algorithm = GeneticAlgorithm(self.initial_population, self.is_solution, self.fitness, self.stop_condition)
 
         self.selected_algorithm = self.backtracking
         self.input_length = 0
@@ -105,9 +107,10 @@ class Solver:
 
     def initial_solution(self, queens):
         if len(queens) < self.board.board_size:
-            positions = set(range(self.board.board_size)) - set(queens)
-            for i in range(len(queens), self.board.board_size):
-                queens.append(positions.pop())
+            positions = [e for e in range(self.board.board_size) if e not in queens]
+            random.shuffle(positions)
+            for e in positions:
+                queens.append(e)
         return queens
 
     def initial_population(self, queens):
@@ -115,6 +118,8 @@ class Solver:
             queens = self.initial_solution(queens)
         return self.neighborhood(queens)
 
+    def stop_condition(self, start_time):
+        return time.time() - start_time > self.board.board_size * self.board.time_constraint_scalar
 
     def reset_solutions(self):
         self.solutions = []
@@ -122,3 +127,19 @@ class Solver:
         self.tabu_search.solutions = []
         self.simulated_annealing.solutions = []
         self.genetic_algorithm.solutions = []
+
+    def is_really_solution(self, queens):
+        if len(queens) != self.board.board_size:
+            return False
+        if len(queens) != len(set(queens)):
+            return False
+        # Diagonal conflicts (x and y distance is equal).
+        for i in range(len(queens)):
+            for j in range(i + 1, len(queens)):
+
+                y_dist = abs(queens[i] - queens[j])
+                x_dist = abs(i - j)
+
+                if y_dist == x_dist:
+                    return False
+        return True
