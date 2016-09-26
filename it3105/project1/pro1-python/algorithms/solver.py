@@ -45,7 +45,7 @@ class Solver:
 
     def fitness(self, queens):
         if not queens:
-            return -math.inf
+            return -1000
         L = len(queens)
         if L > self.board.board_size:
             return -1000
