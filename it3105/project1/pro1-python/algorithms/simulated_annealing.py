@@ -61,7 +61,6 @@ class SimulatedAnnealing:
         return math.exp(-difference / T)
 
     def temperatures(self, board_size):
-        # return [1 for _ in range(2 * board_size * board_size)]
         k = 0
         while k < board_size * board_size:
             yield 1 * pow(0.95, k)

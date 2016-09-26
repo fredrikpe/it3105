@@ -1,8 +1,14 @@
-Report
+Report - Fredrik Ingebrigtsen
 
 a) Part-1	(2p)
 	
-	• A list of integers between 0 and N - 1. Each number representing the row position of each column.
+	• A list of integers between 0 and N - 1. Each number representing the row position of the queen in 
+	  each column. This eliminates the possibility of vertical conflicts. I have also used distinct values 
+	  where possible to eliminate horizontal conflicts (the user is still allowed to enter duplicate numbers,
+ 	  but I don't think he/she should). As opposed to the problem text, 0 is a position, and the empty 
+	  string denotes no input in my program. If I were to optimize my program there are different things
+	  I could do, such as encoding the positions using a succinct data structure, not use Python, parallelize.
+
 	• Minus the number of horizontal and diagonal conflicts (there are no vertical conflicts).
 
 b) Part-2	(2p)
@@ -19,7 +25,59 @@ b) Part-2	(2p)
 
 c) Part-3	(2p)
 
-	• 0..0
+	• 1..1 That is repeating 1's. It matters little what the input is for these three algorithms as the 
+	  neighbourhood function quickly eliminates horizontal conflicts, reaching a random state from which the
+	  search continues. Obviously, an input close to a solution helps, but that is unlikely to happen for
+	  larger boards. As the board grows the number of solutions grows with it, but not at the same rate (the 
+	  asymptotic growth of solutions is unkown, but it is lower than number of board positions = n^n or n!
+	  with distinct queens).
 
-	• For TS
-		– 
+	• For TS.
+		– My implementation has only short term memory, one tabu list where the explored states are put 
+		  so that they are not revisited. This means it very similar to a simple hill climb which works well
+		  for finding a single solution fast.
+
+		– The fitness function is the same as the heuristic.
+
+	• For SA.
+		– My SA algorithm chooses a random neighbour and moves there with probability
+		  e^(-fitnessDifference/tempereature). The temperature cools with 5 % each iteration, from 
+		  a starting value around 10. I found that changes in the temperature parameters was not too
+		  impactful, as long as it was low enough at the end to climb to a solution.
+
+		– The fitness function is the same as the heuristic.
+
+	• For GA.
+		– The fitness function is the same as the heuristic.
+
+		– The genes were modelled as queen positions. Mutation a swap of the position of two genes. I used a
+		  binary crossover where two parents are sliced at two points, and exchanges genes to create 
+       		  two children. I selected the fittest part of the population with no randomness. The selection
+		  of a new population after offsprings are added could have used the fact that the old population is
+		  alredy sorted, but doesnt. This will be implemented in an upcoming release.
+		
+		– The mutation allways gave horizontally feasible offspring. The crossover could produce 
+		  horizontally infeasible, but they were corrected with random insertions of missing 
+		  genes at oldest conflicts.
+		
+		– Population size: 2 * N
+		  # of generations: Time constrained
+		  Crossover rate: 50 %
+		  Mutation rate: 80 %
+
+	• Comparison.
+				TS		SA		GA
+		N = 18  	140 at 9 s	41 at 9 s	43 at 9 s
+		N = 20		129 at 10 s	32 at 10 s	52 at 10 s
+		N = 24		105 at 12 s	30 at 12 s	13 at 12 s
+		N = 30		78 at 15 s	13 at 15 s	7 at 15 s
+
+
+
+
+
+
+
+
+
+

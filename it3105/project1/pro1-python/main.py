@@ -80,10 +80,21 @@ class MyApp(QtWidgets.QMainWindow):
         if not text:
             text = self.queensLineEdit.text()
 
-        text = text[:self.board.board_size]
-        self.queensLineEdit.setText(text)
+        cc = 0
+        new_text = ""
+        for c in text:
+            if c == ',':
+                cc += 1
+                if cc >= self.board.board_size:
+                    break
+            new_text += c
 
-        self.board.queens = [int(c) for c in text]
+        self.queensLineEdit.setText(new_text)
+
+        csv = new_text.split(",")
+
+        self.board.queens = [int(v) for v in csv if v != '']
+
         self.solver.input_length = len(text)
         self.reset()
 
