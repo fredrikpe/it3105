@@ -13,11 +13,11 @@ class QLearning:
             self.Q.append([0 for _ in action_space])
 
         self.discount = 0.99
-        self.learning_rate = 0.7
+        self.learning_rate = 0.8
         self.epsilon_list = self.epsilon()
 
     def epsilon(self):
-        return numpy.linspace(0.1, 0, self.number_of_episodes)
+        return numpy.linspace(0.001, 0, self.number_of_episodes)
 
     def value_iteration_update_ex3(self, state, action, reward, new_state):
         self.Q[state][action] += \

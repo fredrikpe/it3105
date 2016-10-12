@@ -4,7 +4,7 @@ import gym
 
 from q_learning import QLearning
 
-number_of_episodes = 3000
+number_of_episodes = 1000
 q_learning = QLearning(list(range(500)), list(range(6)), number_of_episodes)
 
 env = gym.make('Taxi-v1')
@@ -20,26 +20,27 @@ for i_episode in range(number_of_episodes):
 
     episode_reward = 0
     for t in range(10000):
-        env.render()
-        print(observation)
+        #env.render()
+        #print(observation)
 
         action = q_learning.q_e_greedy(observation, i_episode)
         old_observation = observation
         observation, reward, done, info = env.step(action)
 
-        q_learning.value_iteration_update_ex3(old_observation, action, reward, observation)
+        q_learning.value_iteration_update_ex4(old_observation, action, reward, observation, i_episode)
+
+        episode_reward += reward
 
         if done:
-            episode_reward += reward
-            print("Episode finished after {} timesteps".format(t+1))
+            #print("Episode finished after {} timesteps".format(t+1))
             break
 
-    # hundred_slice.append(episode_reward)
-    # if hundred_counter == 100:
-    #     print(sum(hundred_slice))
-    #     hundred_slice.popleft()
-    # else:
-    #     hundred_counter += 1
+    hundred_slice.append(episode_reward)
+    if hundred_counter == 100:
+        print(sum(hundred_slice) / 100)
+        hundred_slice.popleft()
+    else:
+        hundred_counter += 1
 
-    print("Episode:", i_episode, "Total reward:", episode_reward)
+    #print("Episode:", i_episode, "Total reward:", episode_reward)
 
