@@ -8,27 +8,51 @@
 <h1>Project 2 Report - Fredrik Ingebrigtsen</h1>
 <h3>Exercise 2</h3>
 <ol type="a">
+    <li></li>I used a list of probabilities to represent the Q function, where the indexes corresponds to the direction
+    to take.
     <li></li>
-    <li></li>
-    <li></li>Yes, because the greedy only takes the same action over and over, and has no opportunity to learn from
-    other actions.
-    <li></li>
+    <li></li>Yes, because the e-greedy policy has some inherent randomness it will explore different paths that may
+    yeild a better Q function. There is a trade off between exploration/explotation, and it's usually a smart idea to
+    have a bit of both. A greedy policy only does explotation (choosing the best action based on current knowledge,
+    which might get stuck at local optimums.
+    <li></li>The accuumulated quantity is the expected long term reward for taking action south in state s
+    (Q(s, South)). Using these quantities for to make better estimates is the basis of value based Q learning, where
+    the policy of choosing next action is based on the expected long term value of taking that action. If we follow
+    a greedy policy we still can make better estimates, but as previously mentioned no exploration of seemingly
+    suboptimal paths are tried out.
 </ol>
 
 <h3>Exercise 3</h3>
-<ol type="a">
-    <li></li>
-    <li></li>
-    <li></li>
-    <li></li>
-</ol>
+Demo.
+<figure>
+    <img src="ex3.png" width="600" height="480">
+    <figcaption>Ex 3. Average reward over 100 episodes.</figcaption>
+</figure>
+
 
 <h3>Exercise 4</h3>
-SARSA
-<h3>Exercise 5</h3>
-This is still off-policy learning, because it is learning based on a policy not necessarily equal to
-the one used for exploring.
+This is whats known as State-Action-Reward-State-Action (SARSA). This is on-policy learning, meaning that the Q
+function is updated based on the current policy used instead of the maximum future value.
 
+<figure>
+    <img src="ex4.png" width="600" height="480">
+    <figcaption>Ex 4. Average reward over 100 episodes.</figcaption>
+</figure>
+
+
+<h3>Exercise 6</h3>
+Yes, and I would use an off-policy to train the agent. The exploration policy would necessarily be the one used by the
+human operators, and updating the Q values with the max future value. Not knowing anything about the policy used
+by the operators it could be the case that it is either strictly greedy or just has no randomness/variance, which
+would make off or on-policy the same thing (if there is only one action tried out).
+
+<h3>Exercise 7</h3>
+I used a list of lists, one list for each state containing the current estimated long term rewards for each action.
+
+<figure>
+    <img src="ex7.png" width="600" height="480">
+    <figcaption>Ex 7. Average reward over 100 episodes.</figcaption>
+</figure>
 
 </body>
 </html>
