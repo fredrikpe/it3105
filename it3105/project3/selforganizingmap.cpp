@@ -1,5 +1,7 @@
 #include <math.h>
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 #include "selforganizingmap.h"
 
@@ -21,7 +23,7 @@ int SelfOrganizingMap::bestMatchingUnit(point &city)
 {
     double currentMinimum = INFINITY;
     int currentIndex;
-    for(int i=0; i<num_of_cities; ++i)
+    for(int i=0; i<num_of_nodes; ++i)
     {
         double dist = euclidean_distance(nodes[i], city);
         if (dist < currentMinimum)
@@ -35,7 +37,7 @@ int SelfOrganizingMap::bestMatchingUnit(point &city)
 
 int SelfOrganizingMap::radius()
 {
-    switch (radiusType)
+    switch (decayType)
     {
     case STATIC:
         return radiusStatic();
@@ -54,16 +56,42 @@ int SelfOrganizingMap::radiusStatic()
 
 int SelfOrganizingMap::radiusLinear()
 {
-    int radius = num_of_cities - step / 2;
-    if (radius < 0) {
-        return 0;
-    }
-    return radius;
+    int radius = num_of_cities / 2 - step / 2;
+    return radius < 0 ? 0 : radius;
 }
 
 int SelfOrganizingMap::radiusExponential()
 {
     return 1;
+}
+
+double SelfOrganizingMap::learningRate()
+{
+    switch (decayType)
+    {
+    case STATIC:
+        return learningRateStatic();
+    case LINEAR:
+        return learningRateLinear();
+    case EXPONENTIAL:
+        return learningRateExponential();
+    }
+}
+
+double SelfOrganizingMap::learningRateStatic()
+{
+    return 0.3;
+}
+
+double SelfOrganizingMap::learningRateLinear()
+{
+    double rate = 1 - step*0.01;
+    return rate < 0 ? 0 : rate;
+}
+
+double SelfOrganizingMap::learningRateExponential()
+{
+    return exp(-step/25.0);
 }
 
 
@@ -74,8 +102,8 @@ std::vector<int> SelfOrganizingMap::neighborhood(int bmu_index)
 
     for (int i=bmu_index - r; i<=bmu_index + r; ++i)
     {
-        int index = i % num_of_cities;
-        index = index >= 0 ? index : index + num_of_cities;
+        int index = i % num_of_nodes;
+        index = index >= 0 ? index : index + num_of_nodes;
         neighborhood_indexes.push_back(index);
     }
     return neighborhood_indexes;
@@ -87,16 +115,10 @@ void SelfOrganizingMap::updateWeights(std::vector<int>& neighborhood_indexes, po
     for (auto i : neighborhood_indexes)
     {
         //double dist = 1; //euclidean_distance(nodes[i], nodes[bmu_index]);
-        nodes[i].first += learning_rate() * (city.first - nodes[i].first);
-        nodes[i].second += learning_rate() * (city.second - nodes[i].second);
+        nodes[i].first += learningRate() * (city.first - nodes[i].first);
+        nodes[i].second += learningRate() * (city.second - nodes[i].second);
         //cout << dist << ", " << nodes[i].first << ", " << nodes[i].second << endl;
     }
-}
-
-
-double SelfOrganizingMap::learning_rate()
-{
-    return exp(-step/25.0);
 }
 
 
@@ -113,24 +135,23 @@ SelfOrganizingMap::SelfOrganizingMap() {}
 SelfOrganizingMap::SelfOrganizingMap(cityMap &data)
     : cities(data)
 {
+
     num_of_cities = cities.size();
-    for (int i=0; i<num_of_cities; i++)
-    {
-        nodes.push_back(SelfOrganizingMap::randomWeightVector());
-    }
+    num_of_nodes = num_of_cities + 5;
+    cities.clear();
+    randomCityMap(cities, num_of_cities);
+    this_thread::sleep_for(chrono::seconds(1));
+    randomCityMap(nodes, num_of_nodes);
 }
 
 
-point SelfOrganizingMap::randomWeightVector()
+void SelfOrganizingMap::randomCityMap(cityMap &cm, int len)
 {
-    point r;
-    random_device rd;
     mt19937 gen(rd());
     uniform_real_distribution<> dis(0, 1);
 
-    for (int i=0; i<num_of_cities; i++)
+    for (int i=0; i<len; i++)
     {
-        r = make_pair(dis(gen), dis(gen));
+        cm.push_back(make_pair(dis(gen), dis(gen)));
     }
-    return r;
 }

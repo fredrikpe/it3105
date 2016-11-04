@@ -11,7 +11,7 @@ using namespace std;
 typedef pair<double, double> point;
 typedef vector<point> cityMap;
 
-enum RadiusType
+enum DecayType
 {
     STATIC,
     LINEAR,
@@ -26,7 +26,7 @@ private:
 public:
     SelfOrganizingMap(cityMap &data);
     SelfOrganizingMap();
-    point randomWeightVector();
+    void randomCityMap(cityMap &cm, int len);
 
     // Algorithm methods
     void one_iteration(point& city);
@@ -34,17 +34,24 @@ public:
     std::vector<int> neighborhood(int bmu_index);
     void updateWeights(std::vector<int>& neighborhood_indexes, point& city, int bmu_index);
     double euclidean_distance(point a, point b);
+
+    double learningRate();
+    double learningRateStatic();
+    double learningRateLinear();
+    double learningRateExponential();
+
+    int radius();
     int radiusStatic();
     int radiusLinear();
     int radiusExponential();
-    int radius();
-
-    double learning_rate();
 
     int num_of_cities;
+    int num_of_nodes;
     cityMap cities;
     cityMap nodes;
-    RadiusType radiusType = LINEAR;
+    DecayType decayType = LINEAR;
+
+    random_device rd;
 };
 
 

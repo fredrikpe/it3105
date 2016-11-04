@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     ui->mainLayout->addWidget(canvas);
-
+    ui->mainLayout->setStretch(1, 1);
 
 
 
@@ -30,7 +30,7 @@ MainWindow::MainWindow(QWidget *parent) :
     }
 
     som = std::make_shared<SelfOrganizingMap>(testData);
-    som->radiusType = STATIC;
+    som->decayType = LINEAR;
     canvas->som = som;
 
 
