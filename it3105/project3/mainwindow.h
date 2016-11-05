@@ -2,6 +2,11 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QTextStream>
+#include <QStringList>
+#include <QFile>
 
 #include <memory>
 
@@ -23,7 +28,27 @@ public:
     void drawCanvas();
 
 private slots:
-    void on_nextIterationButton_clicked();
+    void on_oneStepButton_clicked();
+
+    void on_solveButton_clicked();
+
+    void on_openFileButton_clicked();
+
+    void normalize(vector<pair<double, double>>& cityMap);
+
+    void on_nEpochsButton_clicked();
+
+    void on_nEpochsSpinBox_editingFinished();
+
+    void on_staticButton_clicked();
+
+    void on_linearButton_clicked();
+
+    void on_exponentialButton_clicked();
+
+    void changeDecayType(DecayType t);
+
+    void reset();
 
 private:
 
@@ -32,6 +57,7 @@ private:
 
     std::shared_ptr<SelfOrganizingMap> som;
     int currentCityIndex = 0;
+    int n_epochs = 1;
 };
 
 #endif // MAINWINDOW_H

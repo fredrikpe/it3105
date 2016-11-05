@@ -26,3 +26,9 @@ FORMS    += mainwindow.ui
 
 # FLAGS
 QMAKE_CXXFLAGS += -std=c++14
+
+DISTFILES += \
+    western-sahara.txt \
+    uruguay.txt \
+    qatar.txt \
+    djibouti.txt

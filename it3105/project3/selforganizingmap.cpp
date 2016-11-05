@@ -6,24 +6,29 @@
 #include "selforganizingmap.h"
 
 
-void SelfOrganizingMap::one_iteration(point& city)
+void SelfOrganizingMap::one_step(const point& city)
 {
-    //cout << city.first << ", " << city.second << endl;
     int bmu_index = bestMatchingUnit(city);
-    std::cout << "bmu_index: " << bmu_index << std::endl;
     std::vector<int> bmu_neighborhood_indexes = neighborhood(bmu_index);
-    //std::cout << "2" << std::endl;
     updateWeights(bmu_neighborhood_indexes, city, bmu_index);
-    //std::cout << "3" << std::endl;
-    step++;
+}
+
+void SelfOrganizingMap::one_epoch()
+{
+    for (auto&& city : cities)
+    {
+        one_step(city);
+    }
+    epoch++;
 }
 
 
-int SelfOrganizingMap::bestMatchingUnit(point &city)
+int SelfOrganizingMap::bestMatchingUnit(const point &city)
 {
-    double currentMinimum = INFINITY;
-    int currentIndex;
-    for(int i=0; i<num_of_nodes; ++i)
+    double currentMinimum = euclidean_distance(nodes[0], city);
+    int currentIndex = 0;
+
+    for(int i=1; i<num_of_nodes; ++i)
     {
         double dist = euclidean_distance(nodes[i], city);
         if (dist < currentMinimum)
@@ -51,18 +56,18 @@ int SelfOrganizingMap::radius()
 
 int SelfOrganizingMap::radiusStatic()
 {
-    return 1;
+    return RADIUS;
 }
 
 int SelfOrganizingMap::radiusLinear()
 {
-    int radius = num_of_cities / 2 - step / 2;
-    return radius < 0 ? 0 : radius;
+    int r = RADIUS - epoch;
+    return r < 0 ? 0 : r;
 }
 
 int SelfOrganizingMap::radiusExponential()
 {
-    return 1;
+    return RADIUS * exp(-(double)epoch/(num_of_cities / log(RADIUS)));
 }
 
 double SelfOrganizingMap::learningRate()
@@ -80,18 +85,18 @@ double SelfOrganizingMap::learningRate()
 
 double SelfOrganizingMap::learningRateStatic()
 {
-    return 0.3;
+    return LEARNING_RATE;
 }
 
 double SelfOrganizingMap::learningRateLinear()
 {
-    double rate = 1 - step*0.01;
+    double rate = LEARNING_RATE -  epoch / num_of_cities;
     return rate < 0 ? 0 : rate;
 }
 
 double SelfOrganizingMap::learningRateExponential()
 {
-    return exp(-step/25.0);
+    return LEARNING_RATE * exp(-(double)epoch/(num_of_cities / log(LEARNING_RATE)));
 }
 
 
@@ -109,45 +114,121 @@ std::vector<int> SelfOrganizingMap::neighborhood(int bmu_index)
     return neighborhood_indexes;
 }
 
+double SelfOrganizingMap::influence(const point &node, const point &bmu)
+{
+    int r = radius();
+    if (r == 0)
+    {
+        return euclidean_distance_squared(node, bmu) == 0 ? 1 : 0;
+    }
+    return exp(-euclidean_distance_squared(node, bmu)/(2 * pow(r, 2)));
+}
 
-void SelfOrganizingMap::updateWeights(std::vector<int>& neighborhood_indexes, point& city, int bmu_index)
+void SelfOrganizingMap::updateWeights(std::vector<int>& neighborhood_indexes, const point& city, int bmu_index)
 {
     for (auto i : neighborhood_indexes)
     {
-        //double dist = 1; //euclidean_distance(nodes[i], nodes[bmu_index]);
-        nodes[i].first += learningRate() * (city.first - nodes[i].first);
-        nodes[i].second += learningRate() * (city.second - nodes[i].second);
-        //cout << dist << ", " << nodes[i].first << ", " << nodes[i].second << endl;
+        nodes[i].first += influence(nodes[i], nodes[bmu_index]) * learningRate() * (city.first - nodes[i].first);
+        nodes[i].second += influence(nodes[i], nodes[bmu_index]) * learningRate() * (city.second - nodes[i].second);
     }
 }
 
-
-double SelfOrganizingMap::euclidean_distance(point a, point b)
+void SelfOrganizingMap::makeTour()
 {
-    //cout << a.first << " a, b " << b.first << endl;
-    return sqrt(pow(a.first - b.first, 2) + pow(a.second - b.second, 2));
+    vector<int> tour;
+    for (auto&& city : cities)
+    {
+        tour.push_back(bestMatchingUnit(city));
+    }
+
+    tour_indexes.clear();
+    for (int i=0; i<num_of_cities; i++)
+    {
+        tour_indexes.push_back(i);
+    }
+
+    mt19937 gen(random_engine());
+    uniform_real_distribution<> dis(0, 1);
+
+    // Sort indexes based on comparing values in tour
+    // Choose at random if equal
+    sort(tour_indexes.begin(), tour_indexes.end(),
+         [&tour, &dis, &gen](int i1, int i2)
+    {
+        if (tour[i1] == tour[i2])
+        {
+            return dis(gen) < 0.5;
+        }
+        return tour[i1] < tour[i2];
+    });
+    calculateTourDistance();
+}
+
+void SelfOrganizingMap::calculateTourDistance()
+{
+    point current, prev = cities[tour_indexes.front()];
+    tour_distance = euclidean_distance(prev, cities[tour_indexes.back()]);
+
+    for (int i=1; i<tour_indexes.size(); i++)
+    {
+        current = cities[tour_indexes[i]];
+        tour_distance += euclidean_distance(prev, current);
+        prev = current;
+    }
+    tour_distance += euclidean_distance(prev, current);
+}
+
+
+double SelfOrganizingMap::euclidean_distance(const point &a, const point &b)
+{
+    return sqrt(euclidean_distance_squared(a, b));
+}
+
+double SelfOrganizingMap::euclidean_distance_squared(const point &a, const point &b)
+{
+    return pow(a.first - b.first, 2) + pow(a.second - b.second, 2);
 }
 
 
 SelfOrganizingMap::SelfOrganizingMap() {}
 
 
-SelfOrganizingMap::SelfOrganizingMap(cityMap &data)
-    : cities(data)
+void SelfOrganizingMap::newCityInstance(const cityMap &data)
 {
+    epoch = 1;
+    cities = data;
+
+    // Shuffle cities
+    shuffle(cities.begin(), cities.end(), random_engine);
 
     num_of_cities = cities.size();
-    num_of_nodes = num_of_cities + 5;
-    cities.clear();
-    randomCityMap(cities, num_of_cities);
-    this_thread::sleep_for(chrono::seconds(1));
-    randomCityMap(nodes, num_of_nodes);
+    num_of_nodes = num_of_cities + num_of_cities / 4;
+    RADIUS = num_of_cities / 10;
+
+    nodes.clear();
+    //generateRandomCityMap(nodes, num_of_nodes);
+    generateCircularCityMap(nodes, 0.25, num_of_nodes);
 }
 
-
-void SelfOrganizingMap::randomCityMap(cityMap &cm, int len)
+void SelfOrganizingMap::generateCircularCityMap(cityMap &cm, double radius, int len)
 {
-    mt19937 gen(rd());
+    //A point at angle theta on the circle whose centre is (x0,y0) and whose radius is r is (x0 + r cos theta, y0 + r sin theta).
+    //Now choose theta values evenly spaced between 0 and 2pi.
+    double slice = 2*4*atan(1) / len;
+    double x, y, theta, x0 = 0.5, y0 = 0.5;
+
+    for (int i=1; i<=len; i++)
+    {
+        theta = slice * i;
+        x = x0 + radius * cos(theta);
+        y = y0 + radius * sin(theta);
+        cm.push_back(make_pair(x, y));
+    }
+}
+
+void SelfOrganizingMap::generateRandomCityMap(cityMap &cm, int len)
+{
+    mt19937 gen(random_engine());
     uniform_real_distribution<> dis(0, 1);
 
     for (int i=0; i<len; i++)

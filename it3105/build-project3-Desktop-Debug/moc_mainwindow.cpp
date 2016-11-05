@@ -22,7 +22,7 @@ static const uint qt_meta_data_MainWindow[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-       1,   14, // methods
+      11,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -31,12 +31,31 @@ static const uint qt_meta_data_MainWindow[] = {
 
  // slots: signature, parameters, type, tag, flags
       12,   11,   11,   11, 0x08,
+      39,   11,   11,   11, 0x08,
+      64,   11,   11,   11, 0x08,
+     100,   92,   11,   11, 0x08,
+     141,   11,   11,   11, 0x08,
+     168,   11,   11,   11, 0x08,
+     204,   11,   11,   11, 0x08,
+     230,   11,   11,   11, 0x08,
+     256,   11,   11,   11, 0x08,
+     289,  287,   11,   11, 0x08,
+     316,   11,   11,   11, 0x08,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_MainWindow[] = {
-    "MainWindow\0\0on_nextIterationButton_clicked()\0"
+    "MainWindow\0\0on_oneStepButton_clicked()\0"
+    "on_solveButton_clicked()\0"
+    "on_openFileButton_clicked()\0cityMap\0"
+    "normalize(vector<pair<double,double> >&)\0"
+    "on_nEpochsButton_clicked()\0"
+    "on_nEpochsSpinBox_editingFinished()\0"
+    "on_staticButton_clicked()\0"
+    "on_linearButton_clicked()\0"
+    "on_exponentialButton_clicked()\0t\0"
+    "changeDecayType(DecayType)\0reset()\0"
 };
 
 void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -45,11 +64,20 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         Q_ASSERT(staticMetaObject.cast(_o));
         MainWindow *_t = static_cast<MainWindow *>(_o);
         switch (_id) {
-        case 0: _t->on_nextIterationButton_clicked(); break;
+        case 0: _t->on_oneStepButton_clicked(); break;
+        case 1: _t->on_solveButton_clicked(); break;
+        case 2: _t->on_openFileButton_clicked(); break;
+        case 3: _t->normalize((*reinterpret_cast< vector<pair<double,double> >(*)>(_a[1]))); break;
+        case 4: _t->on_nEpochsButton_clicked(); break;
+        case 5: _t->on_nEpochsSpinBox_editingFinished(); break;
+        case 6: _t->on_staticButton_clicked(); break;
+        case 7: _t->on_linearButton_clicked(); break;
+        case 8: _t->on_exponentialButton_clicked(); break;
+        case 9: _t->changeDecayType((*reinterpret_cast< DecayType(*)>(_a[1]))); break;
+        case 10: _t->reset(); break;
         default: ;
         }
     }
-    Q_UNUSED(_a);
 }
 
 const QMetaObjectExtraData MainWindow::staticMetaObjectExtraData = {
@@ -84,9 +112,9 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 1)
+        if (_id < 11)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 1;
+        _id -= 11;
     }
     return _id;
 }
