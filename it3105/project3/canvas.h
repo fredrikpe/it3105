@@ -13,6 +13,10 @@ class Canvas : public QWidget
 {
     Q_OBJECT
 
+private:
+    int XPAD = 5;
+    int YPAD = 20;
+
 public:
     explicit Canvas(QWidget *parent = 0);
 

@@ -22,7 +22,7 @@ static const uint qt_meta_data_MainWindow[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-      11,   14, // methods
+      14,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -39,8 +39,11 @@ static const uint qt_meta_data_MainWindow[] = {
      204,   11,   11,   11, 0x08,
      230,   11,   11,   11, 0x08,
      256,   11,   11,   11, 0x08,
-     289,  287,   11,   11, 0x08,
-     316,   11,   11,   11, 0x08,
+     294,  287,   11,   11, 0x08,
+     327,   11,   11,   11, 0x08,
+     335,   11,   11,   11, 0x08,
+     377,   11,   11,   11, 0x08,
+     412,   11,   11,   11, 0x08,
 
        0        // eod
 };
@@ -54,8 +57,11 @@ static const char qt_meta_stringdata_MainWindow[] = {
     "on_nEpochsSpinBox_editingFinished()\0"
     "on_staticButton_clicked()\0"
     "on_linearButton_clicked()\0"
-    "on_exponentialButton_clicked()\0t\0"
-    "changeDecayType(DecayType)\0reset()\0"
+    "on_exponentialButton_clicked()\0old,nu\0"
+    "changeType(DecayType&,DecayType)\0"
+    "reset()\0on_numIterationsspinBox_editingFinished()\0"
+    "on_staticInfluenceButton_clicked()\0"
+    "on_exponentialInfluenceButton_clicked()\0"
 };
 
 void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -73,8 +79,11 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 6: _t->on_staticButton_clicked(); break;
         case 7: _t->on_linearButton_clicked(); break;
         case 8: _t->on_exponentialButton_clicked(); break;
-        case 9: _t->changeDecayType((*reinterpret_cast< DecayType(*)>(_a[1]))); break;
+        case 9: _t->changeType((*reinterpret_cast< DecayType(*)>(_a[1])),(*reinterpret_cast< DecayType(*)>(_a[2]))); break;
         case 10: _t->reset(); break;
+        case 11: _t->on_numIterationsspinBox_editingFinished(); break;
+        case 12: _t->on_staticInfluenceButton_clicked(); break;
+        case 13: _t->on_exponentialInfluenceButton_clicked(); break;
         default: ;
         }
     }
@@ -112,9 +121,9 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 11)
+        if (_id < 14)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 11;
+        _id -= 14;
     }
     return _id;
 }

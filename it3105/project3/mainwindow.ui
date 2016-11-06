@@ -57,6 +57,55 @@
          </widget>
         </item>
         <item>
+         <widget class="QGroupBox" name="groupBox_2">
+          <property name="title">
+           <string>Influence type</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <item>
+            <widget class="QRadioButton" name="staticInfluenceButton">
+             <property name="text">
+              <string>Static</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="exponentialInfluenceButton">
+             <property name="text">
+              <string>Exponential</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Estimated number of epochs</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="numIterationsspinBox">
+          <property name="minimum">
+           <number>5</number>
+          </property>
+          <property name="maximum">
+           <number>500</number>
+          </property>
+          <property name="singleStep">
+           <number>5</number>
+          </property>
+          <property name="value">
+           <number>20</number>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QPushButton" name="oneStepButton">
           <property name="text">
            <string>1 step</string>

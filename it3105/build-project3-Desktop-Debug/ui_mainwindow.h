@@ -16,6 +16,7 @@
 #include <QtGui/QGroupBox>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QHeaderView>
+#include <QtGui/QLabel>
 #include <QtGui/QMainWindow>
 #include <QtGui/QMenuBar>
 #include <QtGui/QPushButton>
@@ -41,6 +42,12 @@ public:
     QRadioButton *staticButton;
     QRadioButton *linearButton;
     QRadioButton *exponentialButton;
+    QGroupBox *groupBox_2;
+    QVBoxLayout *verticalLayout_4;
+    QRadioButton *staticInfluenceButton;
+    QRadioButton *exponentialInfluenceButton;
+    QLabel *label;
+    QSpinBox *numIterationsspinBox;
     QPushButton *oneStepButton;
     QHBoxLayout *horizontalLayout;
     QPushButton *nEpochsButton;
@@ -95,6 +102,40 @@ public:
 
 
         verticalLayout_2->addWidget(groupBox);
+
+        groupBox_2 = new QGroupBox(centralWidget);
+        groupBox_2->setObjectName(QString::fromUtf8("groupBox_2"));
+        verticalLayout_4 = new QVBoxLayout(groupBox_2);
+        verticalLayout_4->setSpacing(6);
+        verticalLayout_4->setContentsMargins(11, 11, 11, 11);
+        verticalLayout_4->setObjectName(QString::fromUtf8("verticalLayout_4"));
+        staticInfluenceButton = new QRadioButton(groupBox_2);
+        staticInfluenceButton->setObjectName(QString::fromUtf8("staticInfluenceButton"));
+
+        verticalLayout_4->addWidget(staticInfluenceButton);
+
+        exponentialInfluenceButton = new QRadioButton(groupBox_2);
+        exponentialInfluenceButton->setObjectName(QString::fromUtf8("exponentialInfluenceButton"));
+
+        verticalLayout_4->addWidget(exponentialInfluenceButton);
+
+
+        verticalLayout_2->addWidget(groupBox_2);
+
+        label = new QLabel(centralWidget);
+        label->setObjectName(QString::fromUtf8("label"));
+        label->setAlignment(Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft);
+
+        verticalLayout_2->addWidget(label);
+
+        numIterationsspinBox = new QSpinBox(centralWidget);
+        numIterationsspinBox->setObjectName(QString::fromUtf8("numIterationsspinBox"));
+        numIterationsspinBox->setMinimum(5);
+        numIterationsspinBox->setMaximum(500);
+        numIterationsspinBox->setSingleStep(5);
+        numIterationsspinBox->setValue(20);
+
+        verticalLayout_2->addWidget(numIterationsspinBox);
 
         oneStepButton = new QPushButton(centralWidget);
         oneStepButton->setObjectName(QString::fromUtf8("oneStepButton"));
@@ -157,6 +198,10 @@ public:
         staticButton->setText(QApplication::translate("MainWindow", "Static", 0, QApplication::UnicodeUTF8));
         linearButton->setText(QApplication::translate("MainWindow", "Linear", 0, QApplication::UnicodeUTF8));
         exponentialButton->setText(QApplication::translate("MainWindow", "Exponential", 0, QApplication::UnicodeUTF8));
+        groupBox_2->setTitle(QApplication::translate("MainWindow", "Influence type", 0, QApplication::UnicodeUTF8));
+        staticInfluenceButton->setText(QApplication::translate("MainWindow", "Static", 0, QApplication::UnicodeUTF8));
+        exponentialInfluenceButton->setText(QApplication::translate("MainWindow", "Exponential", 0, QApplication::UnicodeUTF8));
+        label->setText(QApplication::translate("MainWindow", "Estimated number of epochs", 0, QApplication::UnicodeUTF8));
         oneStepButton->setText(QApplication::translate("MainWindow", "1 step", 0, QApplication::UnicodeUTF8));
         nEpochsButton->setText(QApplication::translate("MainWindow", "N epochs", 0, QApplication::UnicodeUTF8));
         solveButton->setText(QApplication::translate("MainWindow", "Solve", 0, QApplication::UnicodeUTF8));

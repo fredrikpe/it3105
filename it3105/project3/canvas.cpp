@@ -10,13 +10,15 @@ void Canvas::paintEvent(QPaintEvent *event)
     p.setPen(QPen(Qt::blue, 8));
 
     QRect rect = event->rect();
-    int x_scalar = rect.right() - rect.left() - 10;
-    int y_scalar = rect.bottom() - rect.top() - 10;
+    int x_scalar = rect.right() - rect.left() - 2*XPAD;
+    int y_scalar = rect.bottom() - rect.top() - 2*YPAD;
+
+    auto xCoor = [&x_scalar, this](auto point){return x_scalar * point.first + this->XPAD;};
 
     for (auto&& city : som->cities)
     {
-        qreal x = x_scalar * city.first + 5;
-        qreal y = y_scalar * city.second + 5;
+        qreal x = xCoor(city);
+        qreal y = y_scalar * city.second + YPAD;
         p.drawPoint(QPointF(x, y));
     }
 
@@ -26,8 +28,8 @@ void Canvas::paintEvent(QPaintEvent *event)
     bool not_first_point = false;
     for (auto node : som->nodes)
     {
-        qreal x = x_scalar * node.first + 5;
-        qreal y = y_scalar * node.second + 5;
+        qreal x = x_scalar * node.first + XPAD;
+        qreal y = y_scalar * node.second + YPAD;
         current_point = QPointF(x, y);
         p.drawPoint(current_point);
 
@@ -43,14 +45,15 @@ void Canvas::paintEvent(QPaintEvent *event)
         prev_point = current_point;
     }
 
+    // Draw tour
     p.setPen(QPen(Qt::green, 2));
     not_first_point = false;
     if (som->tour_indexes.size() > 0)
     {
         for (auto i : som->tour_indexes)
         {
-            qreal x = x_scalar * som->cities[i].first + 5;
-            qreal y = y_scalar * som->cities[i].second + 5;
+            qreal x = x_scalar * som->cities[i].first + XPAD;
+            qreal y = y_scalar * som->cities[i].second + YPAD;
 
             current_point = QPointF(x, y);
 
@@ -65,11 +68,15 @@ void Canvas::paintEvent(QPaintEvent *event)
         }
     }
 
-    // Draw tour distance
+    // Draw tour distance, radius and learning rate
     p.setPen(QPen(Qt::black, 2));
-    QString distance = "Distance: ";
-    distance += QString::number(som->tour_distance);
-    p.drawText(10, 50, distance);
+
+    QString text = "Distance: ";
+    text += QString::number(som->tour_distance) + "       Radius: ";
+    text += QString::number(som->epoch_radius) + "       Learning rate: ";
+    text += QString::number(som->epoch_learning_rate);
+
+    p.drawText(10, 10, text);
 }
 
 

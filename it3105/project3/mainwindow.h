@@ -46,9 +46,15 @@ private slots:
 
     void on_exponentialButton_clicked();
 
-    void changeDecayType(DecayType t);
+    void changeType(DecayType &old, DecayType nu);
 
     void reset();
+
+    void on_numIterationsspinBox_editingFinished();
+
+    void on_staticInfluenceButton_clicked();
+
+    void on_exponentialInfluenceButton_clicked();
 
 private:
 

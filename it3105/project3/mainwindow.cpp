@@ -1,6 +1,7 @@
 #include <vector>
 #include <memory>
 #include <iostream>
+#include <ctime>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -23,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Init
     ui->staticButton->click();
+    ui->staticInfluenceButton->click();
 
 }
 
@@ -35,10 +37,22 @@ void MainWindow::on_oneStepButton_clicked()
 
 void MainWindow::on_nEpochsButton_clicked()
 {
+    struct timespec start, finish;
+    double elapsed;
+
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
     for (int i=0; i<n_epochs; i++)
     {
         som->one_epoch();
     }
+
+    clock_gettime(CLOCK_MONOTONIC, &finish);
+
+    elapsed = (finish.tv_sec - start.tv_sec);
+    elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+
+    cout << "Time doing " << n_epochs << " epochs: " << elapsed << " s" << endl;
     canvas->update();
 }
 
@@ -117,6 +131,10 @@ void MainWindow::normalize(vector<pair<double, double>>& cityMap)
 
     double dist_x = max_x - min_x;
     double dist_y = max_y - min_y;
+
+    som->x_scaling = dist_x;
+    som->y_scaling = dist_y;
+
     for (auto&& city : cityMap)
     {
         city.first = (city.first - min_x) / dist_x;
@@ -136,6 +154,7 @@ void MainWindow::reset()
     {
         currentCityIndex = 0;
         som->epoch = 1;
+        som->epoch_bmu_indexes.clear();
         som->nodes.clear();
         som->tour_indexes.clear();
         som->generateCircularCityMap(som->nodes, 0.25, som->num_of_nodes);
@@ -145,24 +164,40 @@ void MainWindow::reset()
 
 void MainWindow::on_staticButton_clicked()
 {
-    changeDecayType(STATIC);
+    changeType(som->decay_type, STATIC);
 }
 
 void MainWindow::on_linearButton_clicked()
 {
-    changeDecayType(LINEAR);
+    changeType(som->decay_type, LINEAR);
 }
 
 void MainWindow::on_exponentialButton_clicked()
 {
-    changeDecayType(EXPONENTIAL);
+    changeType(som->decay_type, EXPONENTIAL);
 }
 
-void MainWindow::changeDecayType(DecayType t)
+void MainWindow::changeType(DecayType &old, DecayType nu)
 {
-    if (som->decayType != t)
+    if (old != nu)
     {
-        som->decayType = t;
+        old = nu;
         reset();
     }
+}
+
+void MainWindow::on_numIterationsspinBox_editingFinished()
+{
+    som->num_of_iterations = ui->numIterationsspinBox->value();
+    reset();
+}
+
+void MainWindow::on_staticInfluenceButton_clicked()
+{
+    changeType(som->influence_type, STATIC);
+}
+
+void MainWindow::on_exponentialInfluenceButton_clicked()
+{
+    changeType(som->influence_type, EXPONENTIAL);
 }

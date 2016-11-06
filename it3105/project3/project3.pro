@@ -25,10 +25,15 @@ FORMS    += mainwindow.ui
 
 
 # FLAGS
-QMAKE_CXXFLAGS += -std=c++14
+QMAKE_CXXFLAGS += -std=c++14 -Wall -Wextra -fopenmp -O3
+
+LIBS += -fopenmp
 
 DISTFILES += \
-    western-sahara.txt \
-    uruguay.txt \
-    qatar.txt \
-    djibouti.txt
+    nicaragua_3496.txt \
+    djibouti_38.txt \
+    japan_9847.txt \
+    oman_1979.txt \
+    uruguay_734.txt \
+    qatar_194.txt \
+    western-sahara_29.txt
