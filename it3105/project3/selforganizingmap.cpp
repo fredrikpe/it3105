@@ -8,28 +8,28 @@
 #include "selforganizingmap.h"
 
 
-void SelfOrganizingMap::one_step(const point& city)
+void SelfOrganizingMap::oneStep(const point& city)
 {
     int bmu_index = bestMatchingUnit(city);
     std::vector<int> bmu_neighborhood_indexes = neighborhood(bmu_index);
     updateWeights(bmu_neighborhood_indexes, city, bmu_index);
 }
 
-void SelfOrganizingMap::one_epoch()
+void SelfOrganizingMap::oneEpoch()
 {
     epoch_radius = radius();
     epoch_learning_rate = learningRate();
 
     for (auto&& city : cities)
     {
-        one_step(city);
+        oneStep(city);
     }
     epoch++;
 }
 
 int SelfOrganizingMap::bestMatchingUnit(const point &city)
 {
-    double minimum_distance = euclidean_distance_squared(nodes[0], city);
+    double minimum_distance = euclideanNorm(nodes[0], city);
     int minimum_index = 0;
 
 #pragma omp parallel
@@ -40,7 +40,7 @@ int SelfOrganizingMap::bestMatchingUnit(const point &city)
 #pragma omp for nowait
         for (int i=1; i<num_of_nodes; ++i)
         {
-            double distance = euclidean_distance_squared(nodes[i], city);
+            double distance = euclideanNorm(nodes[i], city);
             if (distance < min_local)
             {
                 min_local = distance;
@@ -62,12 +62,12 @@ int SelfOrganizingMap::bestMatchingUnit(const point &city)
 
 int SelfOrganizingMap::bestMatchingUnitSerialized(const point &city)
 {
-    double current_minimum = euclidean_distance_squared(nodes[0], city);
+    double current_minimum = euclideanNorm(nodes[0], city);
     int current_index = 0;
 
     for(int i=1; i<num_of_nodes; ++i)
     {
-        double dist = euclidean_distance_squared(nodes[i], city);
+        double dist = euclideanNorm(nodes[i], city);
         if (dist < current_minimum)
         {
             current_minimum = dist;
@@ -157,28 +157,28 @@ double SelfOrganizingMap::influence(const point &node, const point &bmu)
     switch (influence_type)
     {
     case STATIC:
-        return influence_static();
+        return influenceStatic();
     case LINEAR:
         throw runtime_error("Linear influence not available");
     case EXPONENTIAL:
-        return influence_gaussian(node, bmu);
+        return influenceGaussian(node, bmu);
 
     }
     throw logic_error("Influence type not found!");
 }
 
-double SelfOrganizingMap::influence_static()
+double SelfOrganizingMap::influenceStatic()
 {
     return 1;
 }
 
-double SelfOrganizingMap::influence_gaussian(const point &node, const point &bmu)
+double SelfOrganizingMap::influenceGaussian(const point &node, const point &bmu)
 {
     if (epoch_radius == 0)
     {
-        return euclidean_distance_squared(node, bmu) == 0 ? 1 : 0;
+        return euclideanNorm(node, bmu) == 0 ? 1 : 0;
     }
-    return exp(-euclidean_distance(node, bmu)/(2 * pow(epoch_radius, 2)));
+    return exp(-euclideanDistance(node, bmu)/(2 * pow(epoch_radius, 2)));
 }
 
 void SelfOrganizingMap::updateWeights(std::vector<int>& neighborhood_indexes, const point& city, int bmu_index)
@@ -207,16 +207,16 @@ void SelfOrganizingMap::makeTour()
     mt19937 gen(random_engine());
     uniform_real_distribution<> dis(0, 1);
 
-    // Sort indexes based on comparing values in tour
-    // Choose at random if equal
+    // Sort indexes based on comparing values in tour. Choose at random if equal
     sort(tour_indexes.begin(), tour_indexes.end(),
-         [&tour, &dis, &gen](int i1, int i2)
+         [&tour](int &i1, int &i2)
     {
-        if (tour[i1] == tour[i2])
-        {
-            return dis(gen) < 0.5;
-        }
         return tour[i1] < tour[i2];
+//        if (tour[i1] == tour[i2])
+//        {
+//            return dis(gen) < 0.5;
+//        }
+//        return tour[i1] < tour[i2];
     });
     calculateTourDistance();
 }
@@ -224,29 +224,29 @@ void SelfOrganizingMap::makeTour()
 void SelfOrganizingMap::calculateTourDistance()
 {
     point current, prev = cities[tour_indexes.front()];
-    tour_distance = euclidean_distance_scaled(prev, cities[tour_indexes.back()]);
+    tour_distance = euclideanDistanceScaled(prev, cities[tour_indexes.back()]);
 
     for (size_t i=1; i<tour_indexes.size(); i++)
     {
         current = cities[tour_indexes[i]];
-        tour_distance += euclidean_distance_scaled(prev, current);
+        tour_distance += euclideanDistanceScaled(prev, current);
         prev = current;
     }
-    tour_distance += euclidean_distance_scaled(prev, current);
+    tour_distance += euclideanDistanceScaled(prev, current);
 }
 
 
-double SelfOrganizingMap::euclidean_distance(const point &a, const point &b)
+double SelfOrganizingMap::euclideanDistance(const point &a, const point &b)
 {
-    return sqrt(euclidean_distance_squared(a, b));
+    return sqrt(euclideanNorm(a, b));
 }
 
-double SelfOrganizingMap::euclidean_distance_squared(const point &a, const point &b)
+double SelfOrganizingMap::euclideanNorm(const point &a, const point &b)
 {
     return pow(a.first - b.first, 2) + pow(a.second - b.second, 2);
 }
 
-double SelfOrganizingMap::euclidean_distance_scaled(const point &a, const point &b)
+double SelfOrganizingMap::euclideanDistanceScaled(const point &a, const point &b)
 {
     return sqrt(pow((a.first - b.first) * x_scaling, 2) + pow((a.second - b.second) * y_scaling, 2));
 }

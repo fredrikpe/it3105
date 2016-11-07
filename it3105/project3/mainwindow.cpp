@@ -30,7 +30,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 void MainWindow::on_oneStepButton_clicked()
 {
-    som->one_step(som->cities[currentCityIndex]);
+    som->oneStep(som->cities[currentCityIndex]);
     currentCityIndex = (currentCityIndex + 1) % som->num_of_cities;
     canvas->update();
 }
@@ -44,7 +44,7 @@ void MainWindow::on_nEpochsButton_clicked()
 
     for (int i=0; i<n_epochs; i++)
     {
-        som->one_epoch();
+        som->oneEpoch();
     }
 
     clock_gettime(CLOCK_MONOTONIC, &finish);
