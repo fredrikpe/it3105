@@ -13,11 +13,11 @@ CC            = gcc
 CXX           = g++
 DEFINES       = -DUNICODE -DQT_QML_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_NEEDS_QMAIN
 CFLAGS        = -pipe -fno-keep-inline-dllexport -g -Wall -Wextra $(DEFINES)
-CXXFLAGS      = -pipe -fno-keep-inline-dllexport -std=c++14 -g -std=gnu++11 -frtti -Wall -Wextra -fexceptions -mthreads $(DEFINES)
+CXXFLAGS      = -pipe -fno-keep-inline-dllexport -std=c++14 -Wall -Wextra -fopenmp -O2 -g -g -std=gnu++11 -frtti -Wall -Wextra -fexceptions -mthreads $(DEFINES)
 INCPATH       = -I..\project3 -I. -I..\..\..\..\Qt\5.7\mingw53_32\include -I..\..\..\..\Qt\5.7\mingw53_32\include\QtWidgets -I..\..\..\..\Qt\5.7\mingw53_32\include\QtGui -I..\..\..\..\Qt\5.7\mingw53_32\include\QtANGLE -I..\..\..\..\Qt\5.7\mingw53_32\include\QtCore -Idebug -I. -I..\..\..\..\Qt\5.7\mingw53_32\mkspecs\win32-g++ 
 LINKER      =        g++
 LFLAGS        =        -Wl,-subsystem,windows -mthreads
-LIBS        =        -lmingw32 -LC:\Qt\5.7\mingw53_32\lib C:\Qt\5.7\mingw53_32\lib\libqtmaind.a -LC:\utils\postgresql\pgsql\lib -LC:\utils\my_sql\my_sql\lib -lshell32 C:\Qt\5.7\mingw53_32\lib\libQt5Widgetsd.a C:\Qt\5.7\mingw53_32\lib\libQt5Guid.a C:\Qt\5.7\mingw53_32\lib\libQt5Cored.a 
+LIBS        =        -lmingw32 -LC:\Qt\5.7\mingw53_32\lib C:\Qt\5.7\mingw53_32\lib\libqtmaind.a -LC:\utils\postgresql\pgsql\lib -LC:\utils\my_sql\my_sql\lib -lshell32 -fopenmp C:\Qt\5.7\mingw53_32\lib\libQt5Widgetsd.a C:\Qt\5.7\mingw53_32\lib\libQt5Guid.a C:\Qt\5.7\mingw53_32\lib\libQt5Cored.a 
 QMAKE         = C:\Qt\5.7\mingw53_32\bin\qmake.exe
 IDC           = idc
 IDL           = midl
@@ -55,7 +55,13 @@ OBJECTS       = debug/main.o \
 		debug/moc_mainwindow.o \
 		debug/moc_canvas.o
 
-DIST          =  ..\project3\mainwindow.h \
+DIST          = nicaragua_3496.txt \
+		djibouti_38.txt \
+		japan_9847.txt \
+		oman_1979.txt \
+		uruguay_734.txt \
+		qatar_194.txt \
+		western-sahara_29.txt ..\project3\mainwindow.h \
 		..\project3\selforganizingmap.h \
 		..\project3\canvas.h ..\project3\main.cpp \
 		..\project3\mainwindow.cpp \
@@ -205,6 +211,16 @@ debug/moc_mainwindow.cpp: ../../../../Qt/5.7/mingw53_32/include/QtWidgets/QMainW
 		../../../../Qt/5.7/mingw53_32/include/QtGui/qtouchdevice.h \
 		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qtabwidget.h \
 		../../../../Qt/5.7/mingw53_32/include/QtGui/qicon.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QFileDialog \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qfiledialog.h \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/qdir.h \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/qfileinfo.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qdialog.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QMessageBox \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qmessagebox.h \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/QTextStream \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/QStringList \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/QFile \
 		../project3/selforganizingmap.h \
 		../project3/canvas.h \
 		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QWidget \
@@ -446,6 +462,16 @@ debug/main.o: ../project3/main.cpp ../project3/mainwindow.h \
 		../../../../Qt/5.7/mingw53_32/include/QtGui/qtouchdevice.h \
 		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qtabwidget.h \
 		../../../../Qt/5.7/mingw53_32/include/QtGui/qicon.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QFileDialog \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qfiledialog.h \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/qdir.h \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/qfileinfo.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qdialog.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QMessageBox \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qmessagebox.h \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/QTextStream \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/QStringList \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/QFile \
 		../project3/selforganizingmap.h \
 		../project3/canvas.h \
 		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QWidget \
@@ -564,6 +590,16 @@ debug/mainwindow.o: ../project3/mainwindow.cpp ../project3/mainwindow.h \
 		../../../../Qt/5.7/mingw53_32/include/QtGui/qtouchdevice.h \
 		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qtabwidget.h \
 		../../../../Qt/5.7/mingw53_32/include/QtGui/qicon.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QFileDialog \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qfiledialog.h \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/qdir.h \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/qfileinfo.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qdialog.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QMessageBox \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qmessagebox.h \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/QTextStream \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/QStringList \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/QFile \
 		../project3/selforganizingmap.h \
 		../project3/canvas.h \
 		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QWidget \
@@ -572,7 +608,61 @@ debug/mainwindow.o: ../project3/mainwindow.cpp ../project3/mainwindow.h \
 		../../../../Qt/5.7/mingw53_32/include/QtGui/qtextoption.h \
 		../../../../Qt/5.7/mingw53_32/include/QtGui/qpen.h \
 		../../../../Qt/5.7/mingw53_32/include/QtGui/QPaintEvent \
-		ui_mainwindow.h
+		ui_mainwindow.h \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/QVariant \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QAction \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qaction.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qactiongroup.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QApplication \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qapplication.h \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/qcoreapplication.h \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/qeventloop.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qdesktopwidget.h \
+		../../../../Qt/5.7/mingw53_32/include/QtGui/qguiapplication.h \
+		../../../../Qt/5.7/mingw53_32/include/QtGui/qinputmethod.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QButtonGroup \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qbuttongroup.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QGroupBox \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qgroupbox.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qframe.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QHBoxLayout \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qboxlayout.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qlayout.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qlayoutitem.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qgridlayout.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QHeaderView \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qheaderview.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qabstractitemview.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qabstractscrollarea.h \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/qabstractitemmodel.h \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/qitemselectionmodel.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qabstractitemdelegate.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qstyleoption.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qabstractspinbox.h \
+		../../../../Qt/5.7/mingw53_32/include/QtGui/qvalidator.h \
+		../../../../Qt/5.7/mingw53_32/include/QtCore/qregularexpression.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qslider.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qabstractslider.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qstyle.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qtabbar.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qrubberband.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QLabel \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qlabel.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QMenuBar \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qmenubar.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qmenu.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QPushButton \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qpushbutton.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qabstractbutton.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QRadioButton \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qradiobutton.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QSpinBox \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qspinbox.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QStatusBar \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qstatusbar.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QToolBar \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/qtoolbar.h \
+		../../../../Qt/5.7/mingw53_32/include/QtWidgets/QVBoxLayout
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o debug\mainwindow.o ..\project3\mainwindow.cpp
 
 debug/selforganizingmap.o: ../project3/selforganizingmap.cpp ../project3/selforganizingmap.h

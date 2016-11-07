@@ -13,11 +13,11 @@ void Canvas::paintEvent(QPaintEvent *event)
     int x_scalar = rect.right() - rect.left() - 2*XPAD;
     int y_scalar = rect.bottom() - rect.top() - 2*YPAD;
 
-    auto xCoor = [&x_scalar, this](auto point){return x_scalar * point.first + this->XPAD;};
+
 
     for (auto&& city : som->cities)
     {
-        qreal x = xCoor(city);
+        qreal x = x_scalar * city.first +  XPAD;
         qreal y = y_scalar * city.second + YPAD;
         p.drawPoint(QPointF(x, y));
     }

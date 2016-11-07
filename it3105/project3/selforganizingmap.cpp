@@ -3,6 +3,7 @@
 #include <chrono>
 #include <thread>
 #include <omp.h>
+#include <stdexcept>
 
 #include "selforganizingmap.h"
 
@@ -87,6 +88,7 @@ int SelfOrganizingMap::radius()
     case EXPONENTIAL:
         return radiusExponential();
     }
+    throw logic_error("Decay type not found!");
 }
 
 
@@ -117,6 +119,7 @@ double SelfOrganizingMap::learningRate()
     case EXPONENTIAL:
         return learningRateExponential();
     }
+    throw logic_error("Decay type not found!");
 }
 
 double SelfOrganizingMap::learningRateStatic()
@@ -155,9 +158,13 @@ double SelfOrganizingMap::influence(const point &node, const point &bmu)
     {
     case STATIC:
         return influence_static();
+    case LINEAR:
+        throw runtime_error("Linear influence not available");
     case EXPONENTIAL:
         return influence_gaussian(node, bmu);
+
     }
+    throw logic_error("Influence type not found!");
 }
 
 double SelfOrganizingMap::influence_static()
@@ -219,7 +226,7 @@ void SelfOrganizingMap::calculateTourDistance()
     point current, prev = cities[tour_indexes.front()];
     tour_distance = euclidean_distance_scaled(prev, cities[tour_indexes.back()]);
 
-    for (int i=1; i<tour_indexes.size(); i++)
+    for (size_t i=1; i<tour_indexes.size(); i++)
     {
         current = cities[tour_indexes[i]];
         tour_distance += euclidean_distance_scaled(prev, current);

@@ -25,7 +25,7 @@ FORMS    += mainwindow.ui
 
 
 # FLAGS
-QMAKE_CXXFLAGS += -std=c++14 -Wall -Wextra -fopenmp -O3
+QMAKE_CXXFLAGS += -std=c++14 -Wall -Wextra -fopenmp -O2 -g
 
 LIBS += -fopenmp
 

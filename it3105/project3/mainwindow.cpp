@@ -154,7 +154,7 @@ void MainWindow::reset()
     {
         currentCityIndex = 0;
         som->epoch = 1;
-        som->epoch_bmu_indexes.clear();
+        som->tour_distance = 0;
         som->nodes.clear();
         som->tour_indexes.clear();
         som->generateCircularCityMap(som->nodes, 0.25, som->num_of_nodes);
